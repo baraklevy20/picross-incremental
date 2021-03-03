@@ -6,7 +6,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer();
 const controls = new OrbitControls(camera, renderer.domElement);
 
-const cubes = [
+const cubesPositions = [
   [0, 4, 0],
   [1, 4, 0],
   [2, 0, 0],
@@ -18,7 +18,7 @@ const cubes = [
   [4, 4, 0],
 ];
 
-const emptyCubes = [
+const emptyCubesPositions = [
   [0, 0, 0],
   [0, 1, 0],
   [0, 2, 0],
@@ -37,16 +37,17 @@ const emptyCubes = [
   [4, 3, 0],
 ];
 
-const cubeSize = 1;
+const cubeSize = 3;
 const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
 const material = new THREE.MeshBasicMaterial({ color: 0xd7d7d7 });
 const emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
-const selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
 const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
 const raycaster = new THREE.Raycaster(); // create once
 const mouse = new THREE.Vector2(); // create once
 let intersectedCube;
 const pivot = new THREE.Group();
+let isDragging = false;
 
 const getCenterPoint = (cubes) => {
   const minX = Math.min(...cubes.map((pos) => pos[0]));
@@ -61,11 +62,32 @@ const getCenterPoint = (cubes) => {
 const animate = () => {
   requestAnimationFrame(animate);
   controls.update();
-  // pivot.position.sub(new THREE.Vector3(2, 2, 0));
-  // pivot.rotation.z += 0.02;
-  // pivot.position.add(new THREE.Vector3(2, 2, 0));
-  // pivot.rotation.x += 0.02;
+  // pivot.rotation.y += 0.03;
   renderer.render(scene, camera);
+};
+
+const getIntersectedObject = () => {
+  raycaster.setFromCamera(mouse, camera);
+
+  // todo find might be slow. change it to only work on the cubes and not the outlines.
+  const intersects = raycaster.intersectObjects(
+    pivot.children[0].children.filter((c) => c.banana !== undefined),
+  );
+
+  if (intersects.length > 0) {
+    return intersects[0].object;
+  }
+
+  return null;
+};
+
+const onCubeClick = (intersectedCube) => {
+  if (!intersectedCube) {
+    return;
+  }
+
+  pivot.children[0].remove(intersectedCube);
+  intersectedCube.geometry.dispose();
 };
 
 const initMouseClick = () => {
@@ -74,30 +96,52 @@ const initMouseClick = () => {
 
     mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
     mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
 
-    // todo find might be slow. change it to only work on the cubes and not the outlines.
-    const intersects = raycaster.intersectObjects(pivot.children[0].children.filter((c) => c.banana !== undefined));
-    // console.log(intersects.length);
-    if (intersects.length > 0) {
-      if (intersectedCube !== intersects[0].object) {
-        if (intersectedCube) {
-          intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
-        }
-        intersectedCube = intersects[0].object;
-        intersectedCube.material = selectedMaterial;
+    const intersectedObject = getIntersectedObject();
+
+    // If we are pointing at a cube
+    if (intersectedObject) {
+      // If it's the same cube we're already pointing at, ignore
+      if (intersectedCube === intersectedObject) {
+        return;
       }
-    } else if (intersectedCube) {
+
+      // If we used to point at a different cube, change the material of that cube to the original
+      if (intersectedCube) {
+        intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
+      }
+
+      // Change the material of the newly pointed-at cube
+      intersectedCube = intersectedObject;
+      intersectedCube.material = selectedMaterial;
+    // eslint-disable-next-line brace-style
+    }
+    // If we aren't pointing at any cube, return the previously pointed-at cube's material
+    else if (intersectedCube) {
       intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
       intersectedCube = null;
     }
   });
 
+  document.addEventListener('pointermove', () => {
+    isDragging = true;
+  });
+
   document.addEventListener('pointerdown', () => {
-    if (intersectedCube) {
-      pivot.children[0].remove(intersectedCube);
-      intersectedCube.geometry.dispose();
+    isDragging = false;
+  });
+
+  document.addEventListener('pointerup', () => {
+    if (isDragging) {
+      return;
     }
+
+    onCubeClick(getIntersectedObject());
+  });
+
+  document.addEventListener('touchstart', (event) => {
+    mouse.x = (event.touches[0].clientX / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(event.touches[0].clientY / renderer.domElement.clientHeight) * 2 + 1;
   });
 };
 
@@ -114,7 +158,7 @@ const init = () => {
   renderer.setClearColor(0x9999ff, 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
-  const centerPoint = getCenterPoint(cubes);
+  const centerPoint = getCenterPoint(cubesPositions);
   const cubesMesh = new THREE.Object3D();
   cubesMesh.position.set(
     -centerPoint[0] * cubeSize,
@@ -124,7 +168,7 @@ const init = () => {
   pivot.add(cubesMesh);
   scene.add(pivot);
 
-  cubes.forEach((cubePosition) => {
+  cubesPositions.forEach((cubePosition) => {
     const cube = new THREE.Mesh(geometry, material);
     cube.banana = true;
     cube.position.set(
@@ -145,7 +189,7 @@ const init = () => {
     cubesMesh.add(outlineCube);
   });
 
-  emptyCubes.forEach((cubePosition) => {
+  emptyCubesPositions.forEach((cubePosition) => {
     const cube = new THREE.Mesh(geometry, emptyMaterial);
     cube.banana = false;
     cube.position.set(
