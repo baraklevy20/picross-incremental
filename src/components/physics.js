@@ -1,14 +1,14 @@
 import * as THREE from 'three';
+import { camera } from '../context';
 
 export default class PhysicsComponent {
-  constructor(camera, pivot) {
-    this.camera = camera;
+  constructor(pivot) {
     this.pivot = pivot;
     this.raycaster = new THREE.Raycaster();
   }
 
   getIntersectedObject(mouse) {
-    this.raycaster.setFromCamera(mouse, this.camera);
+    this.raycaster.setFromCamera(mouse, camera);
 
     const intersects = this.raycaster.intersectObjects(this.pivot.children, true);
 

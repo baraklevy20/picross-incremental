@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+import { renderer, scene, camera } from './context';
 import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
 import RenderComponent from './components/render';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
 let controls;
 
 const cubesPositions = [
@@ -106,8 +104,8 @@ const onMouseClick = (mouse) => {
 };
 
 const initComponents = () => {
-  inputComponent = new InputComponent(renderer);
-  physicsComponent = new PhysicsComponent(camera, pivot);
+  inputComponent = new InputComponent();
+  physicsComponent = new PhysicsComponent(pivot);
   renderComponent = new RenderComponent(cubeSize);
 
   inputComponent.getObservable().subscribe(({ type, mouse }) => {
@@ -138,6 +136,8 @@ const init = () => {
   document.body.appendChild(renderer.domElement);
   controls = new OrbitControls(camera, renderer.domElement);
   initComponents();
+  initCameraAndOrbitControl();
+
   const centerPoint = getCenterPoint(cubesPositions);
   const cubesMesh = new THREE.Object3D();
   cubesMesh.position.set(
@@ -155,8 +155,6 @@ const init = () => {
   emptyCubesPositions.forEach((cubePosition) => {
     cubesMesh.add(renderComponent.createCube(cubePosition, true));
   });
-
-  initCameraAndOrbitControl();
 };
 const main = () => {
   init();
