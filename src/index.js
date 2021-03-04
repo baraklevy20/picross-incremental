@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+import InputComponent from './components/input';
+import PhysicsComponent from './components/physics';
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
@@ -43,10 +46,11 @@ const material = new THREE.MeshBasicMaterial({ color: 0xd7d7d7 });
 const emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
 const selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
 const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
-const raycaster = new THREE.Raycaster(); // create once
-const mouse = new THREE.Vector2(); // create once
 let intersectedCube;
+
 const pivot = new THREE.Group();
+let inputComponent;
+let physicsComponent;
 
 const getCenterPoint = (cubes) => {
   const minX = Math.min(...cubes.map((pos) => pos[0]));
@@ -65,80 +69,60 @@ const animate = () => {
   renderer.render(scene, camera);
 };
 
-const getIntersectedObject = () => {
-  raycaster.setFromCamera(mouse, camera);
-
-  // todo find might be slow. change it to only work on the cubes and not the outlines.
-  const intersects = raycaster.intersectObjects(
-    pivot.children[0].children.filter((c) => c.banana !== undefined),
-  );
-
-  if (intersects.length > 0) {
-    return intersects[0].object;
-  }
-
-  return null;
-};
-
-const onCubeClick = (intersectedCube) => {
-  if (!intersectedCube) {
+const onCubeClick = (cube) => {
+  if (!cube) {
     return;
   }
 
-  pivot.children[0].remove(intersectedCube);
-  intersectedCube.geometry.dispose();
+  pivot.children[0].remove(cube);
+  cube.geometry.dispose();
 };
 
-const initMouseClick = () => {
-  document.addEventListener('mousemove', (event) => {
-    event.preventDefault();
+const onMove = (mouse) => {
+  const intersectedObject = physicsComponent.getIntersectedObject(mouse);
 
-    mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-
-    const intersectedObject = getIntersectedObject();
-
-    // If we are pointing at a cube
-    if (intersectedObject) {
-      // If it's the same cube we're already pointing at, ignore
-      if (intersectedCube === intersectedObject) {
-        return;
-      }
-
-      // If we used to point at a different cube, change the material of that cube to the original
-      if (intersectedCube) {
-        intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
-      }
-
-      // Change the material of the newly pointed-at cube
-      intersectedCube = intersectedObject;
-      intersectedCube.material = selectedMaterial;
-    // eslint-disable-next-line brace-style
-    }
-    // If we aren't pointing at any cube, return the previously pointed-at cube's material
-    else if (intersectedCube) {
-      intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
-      intersectedCube = null;
-    }
-  });
-
-  let touchTime;
-
-  document.addEventListener('pointerdown', () => {
-    touchTime = new Date();
-  });
-
-  document.addEventListener('pointerup', () => {
-    if (new Date() - touchTime > 100) {
+  // If we are pointing at a cube
+  if (intersectedObject) {
+    // If it's the same cube we're already pointing at, ignore
+    if (intersectedCube === intersectedObject) {
       return;
     }
 
-    onCubeClick(getIntersectedObject());
-  });
+    // If we used to point at a different cube, change the material of that cube to the original
+    if (intersectedCube) {
+      intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
+    }
 
-  document.addEventListener('touchstart', (event) => {
-    mouse.x = (event.targetTouches[0].pageX / renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = -(event.targetTouches[0].pageY / renderer.domElement.clientHeight) * 2 + 1;
+    // Change the material of the newly pointed-at cube
+    intersectedCube = intersectedObject;
+    intersectedCube.material = selectedMaterial;
+    // eslint-disable-next-line brace-style
+  }
+  // If we aren't pointing at any cube, return the previously pointed-at cube's material
+  else if (intersectedCube) {
+    intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
+    intersectedCube = null;
+  }
+};
+
+const onMouseClick = (mouse) => {
+  onCubeClick(physicsComponent.getIntersectedObject(mouse));
+};
+
+const initComponents = () => {
+  inputComponent = new InputComponent(renderer);
+  physicsComponent = new PhysicsComponent(camera, pivot);
+
+  inputComponent.getObservable().subscribe(({ type, mouse }) => {
+    switch (type) {
+      case 'move':
+        onMove(mouse);
+        break;
+      case 'click':
+        onMouseClick(mouse);
+        break;
+      default:
+    }
   });
 };
 
@@ -209,7 +193,7 @@ const init = () => {
   });
 
   initCameraAndOrbitControl();
-  initMouseClick();
+  initComponents();
 };
 const main = () => {
   init();
