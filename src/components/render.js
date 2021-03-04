@@ -1,5 +1,17 @@
 import * as THREE from 'three';
 
+// todo move to some utility function?
+const getPuzzleCenter = (cubesPositions) => {
+  const minX = Math.min(...cubesPositions.map((pos) => pos[0]));
+  const maxX = Math.max(...cubesPositions.map((pos) => pos[0]));
+  const minY = Math.min(...cubesPositions.map((pos) => pos[1]));
+  const maxY = Math.max(...cubesPositions.map((pos) => pos[1]));
+  const minZ = Math.min(...cubesPositions.map((pos) => pos[2]));
+  const maxZ = Math.max(...cubesPositions.map((pos) => pos[2]));
+
+  return [(maxX - minX) / 2 + minX, (maxY - minY) / 2 + minY, (maxZ - minZ) / 2 + minZ];
+};
+
 export default class RenderComponent {
   constructor(cubeSize) {
     this.cubeSize = cubeSize;
@@ -52,12 +64,38 @@ export default class RenderComponent {
     cube.children[0].material = cube.isEmpty ? this.emptyMaterial : this.material;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   destroyCube(cube) {
     if (!cube) {
       return;
     }
 
+    this.pivot.children[0].remove(cube);
     cube.children.forEach((c) => c.geometry.dispose());
+  }
+
+  createPuzzleMesh(cubesPositions, emptyCubesPositions) {
+    const pivot = new THREE.Group();
+    const centerPoint = getPuzzleCenter(cubesPositions);
+    const cubesMesh = new THREE.Object3D();
+    cubesMesh.position.set(
+      -centerPoint[0] * this.cubeSize,
+      -centerPoint[1] * this.cubeSize,
+      -centerPoint[2] * this.cubeSize,
+    );
+    pivot.add(cubesMesh);
+
+    cubesPositions.forEach((cubePosition) => {
+      cubesMesh.add(this.createCube(cubePosition, false));
+    });
+
+    emptyCubesPositions.forEach((cubePosition) => {
+      cubesMesh.add(this.createCube(cubePosition, true));
+    });
+
+    this.pivot = pivot;
+  }
+
+  getPivot() {
+    return this.pivot;
   }
 }

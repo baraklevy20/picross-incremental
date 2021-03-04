@@ -1,75 +1,28 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import { renderer, scene, camera } from './context';
 import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
 import RenderComponent from './components/render';
-
-let controls;
-
-const cubesPositions = [
-  [0, 4, 0],
-  [1, 4, 0],
-  [2, 0, 0],
-  [2, 1, 0],
-  [2, 2, 0],
-  [2, 3, 0],
-  [2, 4, 0],
-  [3, 4, 0],
-  [4, 4, 0],
-];
-
-const emptyCubesPositions = [
-  [0, 0, 0],
-  [0, 1, 0],
-  [0, 2, 0],
-  [0, 3, 0],
-  [1, 0, 0],
-  [1, 1, 0],
-  [1, 2, 0],
-  [1, 3, 0],
-  [3, 0, 0],
-  [3, 1, 0],
-  [3, 2, 0],
-  [3, 3, 0],
-  [4, 0, 0],
-  [4, 1, 0],
-  [4, 2, 0],
-  [4, 3, 0],
-];
+import PuzzleComponent from './components/puzzle';
 
 const cubeSize = 3;
-let intersectedCube;
 
-const pivot = new THREE.Group();
+let intersectedCube;
+let controls;
 let inputComponent;
 let physicsComponent;
 let renderComponent;
+let puzzleComponent;
 
-const getCenterPoint = (cubes) => {
-  const minX = Math.min(...cubes.map((pos) => pos[0]));
-  const maxX = Math.max(...cubes.map((pos) => pos[0]));
-  const minY = Math.min(...cubes.map((pos) => pos[1]));
-  const maxY = Math.max(...cubes.map((pos) => pos[1]));
-  const minZ = Math.min(...cubes.map((pos) => pos[2]));
-  const maxZ = Math.max(...cubes.map((pos) => pos[2]));
-
-  return [(maxX - minX) / 2 + minX, (maxY - minY) / 2 + minY, (maxZ - minZ) / 2 + minZ];
-};
 const animate = () => {
   requestAnimationFrame(animate);
   controls.update();
-  // pivot.rotation.y += 0.03;
+  // renderComponent.getPivot().rotation.y += 0.03;
   renderer.render(scene, camera);
 };
 
 const onCubeClick = (cube) => {
-  if (!cube) {
-    return;
-  }
-
-  pivot.children[0].remove(cube);
   renderComponent.destroyCube(cube);
 };
 
@@ -104,9 +57,14 @@ const onMouseClick = (mouse) => {
 };
 
 const initComponents = () => {
-  inputComponent = new InputComponent();
-  physicsComponent = new PhysicsComponent(pivot);
+  puzzleComponent = new PuzzleComponent();
   renderComponent = new RenderComponent(cubeSize);
+  renderComponent.createPuzzleMesh(
+    puzzleComponent.getCubesPositions(),
+    puzzleComponent.getEmptyCubesPositions(),
+  );
+  inputComponent = new InputComponent();
+  physicsComponent = new PhysicsComponent(renderComponent.getPivot());
 
   inputComponent.getObservable().subscribe(({ type, mouse }) => {
     switch (type) {
@@ -121,41 +79,31 @@ const initComponents = () => {
   });
 };
 
-const initCameraAndOrbitControl = () => {
-  // const centerPoint = getCenterPoint(cubes);
-  // controls.target.set(centerPoint[0], centerPoint[1], centerPoint[2]);
-  controls.target.set(1, 0, 0);
-  controls.rotateSpeed = 0.5;
-
-  camera.position.z = cubeSize * 10;
-  controls.update();
-};
-const init = () => {
+const initRenderer = () => {
   renderer.setClearColor(0x9999ff, 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
-  controls = new OrbitControls(camera, renderer.domElement);
-  initComponents();
-  initCameraAndOrbitControl();
-
-  const centerPoint = getCenterPoint(cubesPositions);
-  const cubesMesh = new THREE.Object3D();
-  cubesMesh.position.set(
-    -centerPoint[0] * cubeSize,
-    -centerPoint[1] * cubeSize,
-    -centerPoint[2] * cubeSize,
-  );
-  pivot.add(cubesMesh);
-  scene.add(pivot);
-
-  cubesPositions.forEach((cubePosition) => {
-    cubesMesh.add(renderComponent.createCube(cubePosition, false));
-  });
-
-  emptyCubesPositions.forEach((cubePosition) => {
-    cubesMesh.add(renderComponent.createCube(cubePosition, true));
-  });
 };
+
+const initOrbitControl = () => {
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(1, 0, 0);
+  controls.rotateSpeed = 0.5;
+};
+
+const initCamera = () => {
+  camera.position.z = cubeSize * 10;
+  controls.update();
+};
+
+const init = () => {
+  initRenderer();
+  initComponents();
+  initOrbitControl();
+  initCamera();
+  scene.add(renderComponent.getPivot());
+};
+
 const main = () => {
   init();
   animate();
