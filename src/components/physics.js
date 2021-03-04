@@ -10,13 +10,10 @@ export default class PhysicsComponent {
   getIntersectedObject(mouse) {
     this.raycaster.setFromCamera(mouse, this.camera);
 
-    // todo find might be slow. change it to only work on the cubes and not the outlines.
-    const intersects = this.raycaster.intersectObjects(
-      this.pivot.children[0].children.filter((c) => c.banana !== undefined),
-    );
+    const intersects = this.raycaster.intersectObjects(this.pivot.children, true);
 
     if (intersects.length > 0) {
-      return intersects[0].object;
+      return intersects[0].object.parent;
     }
 
     return null;

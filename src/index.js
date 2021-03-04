@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
+import RenderComponent from './components/render';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -41,16 +42,12 @@ const emptyCubesPositions = [
 ];
 
 const cubeSize = 3;
-const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-const material = new THREE.MeshBasicMaterial({ color: 0xd7d7d7 });
-const emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
-const selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
-const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
 let intersectedCube;
 
 const pivot = new THREE.Group();
 let inputComponent;
 let physicsComponent;
+let renderComponent;
 
 const getCenterPoint = (cubes) => {
   const minX = Math.min(...cubes.map((pos) => pos[0]));
@@ -75,7 +72,7 @@ const onCubeClick = (cube) => {
   }
 
   pivot.children[0].remove(cube);
-  cube.geometry.dispose();
+  renderComponent.destroyCube(cube);
 };
 
 const onMove = (mouse) => {
@@ -88,30 +85,30 @@ const onMove = (mouse) => {
       return;
     }
 
-    // If we used to point at a different cube, change the material of that cube to the original
+    // If we used to point at a different cube, deselect the previous cube
     if (intersectedCube) {
-      intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
+      renderComponent.deselectCube(intersectedCube);
     }
 
-    // Change the material of the newly pointed-at cube
+    // Select the newly pointed-at cube
     intersectedCube = intersectedObject;
-    intersectedCube.material = selectedMaterial;
-    // eslint-disable-next-line brace-style
-  }
-  // If we aren't pointing at any cube, return the previously pointed-at cube's material
-  else if (intersectedCube) {
-    intersectedCube.material = intersectedCube.banana ? material : emptyMaterial;
+    renderComponent.selectCube(intersectedCube);
+  } else {
+    // If we aren't pointing at any cube, deselect the previously pointed-at cube
+    renderComponent.deselectCube(intersectedCube);
     intersectedCube = null;
   }
 };
 
 const onMouseClick = (mouse) => {
+  // todo in the future this will be more than just a cube click
   onCubeClick(physicsComponent.getIntersectedObject(mouse));
 };
 
 const initComponents = () => {
   inputComponent = new InputComponent(renderer);
   physicsComponent = new PhysicsComponent(camera, pivot);
+  renderComponent = new RenderComponent(cubeSize);
 
   inputComponent.getObservable().subscribe(({ type, mouse }) => {
     switch (type) {
@@ -140,6 +137,7 @@ const init = () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   controls = new OrbitControls(camera, renderer.domElement);
+  initComponents();
   const centerPoint = getCenterPoint(cubesPositions);
   const cubesMesh = new THREE.Object3D();
   cubesMesh.position.set(
@@ -151,49 +149,14 @@ const init = () => {
   scene.add(pivot);
 
   cubesPositions.forEach((cubePosition) => {
-    const cube = new THREE.Mesh(geometry, material);
-    cube.banana = true;
-    cube.position.set(
-      cubePosition[0] * cubeSize,
-      cubePosition[1] * cubeSize,
-      cubePosition[2] * cubeSize,
-    );
-    cubesMesh.add(cube);
-
-    const outlineCube = new THREE.Mesh(geometry, outlineMaterial);
-    outlineCube.position.set(
-      cubePosition[0] * cubeSize,
-      cubePosition[1] * cubeSize,
-      cubePosition[2] * cubeSize,
-    );
-    outlineCube.scale.multiplyScalar(1.05);
-
-    cubesMesh.add(outlineCube);
+    cubesMesh.add(renderComponent.createCube(cubePosition, false));
   });
 
   emptyCubesPositions.forEach((cubePosition) => {
-    const cube = new THREE.Mesh(geometry, emptyMaterial);
-    cube.banana = false;
-    cube.position.set(
-      cubePosition[0] * cubeSize,
-      cubePosition[1] * cubeSize,
-      cubePosition[2] * cubeSize,
-    );
-    cubesMesh.add(cube);
-
-    const outlineCube = new THREE.Mesh(geometry, outlineMaterial);
-    outlineCube.position.set(
-      cubePosition[0] * cubeSize,
-      cubePosition[1] * cubeSize,
-      cubePosition[2] * cubeSize,
-    );
-    outlineCube.scale.multiplyScalar(1.05);
-
-    cubesMesh.add(outlineCube);
+    cubesMesh.add(renderComponent.createCube(cubePosition, true));
   });
 
   initCameraAndOrbitControl();
-  initComponents();
 };
 const main = () => {
   init();
