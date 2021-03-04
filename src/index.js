@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
-const controls = new OrbitControls(camera, renderer.domElement);
+let controls;
 
 const cubesPositions = [
   [0, 4, 0],
@@ -47,7 +47,6 @@ const raycaster = new THREE.Raycaster(); // create once
 const mouse = new THREE.Vector2(); // create once
 let intersectedCube;
 const pivot = new THREE.Group();
-let isDragging = false;
 
 const getCenterPoint = (cubes) => {
   const minX = Math.min(...cubes.map((pos) => pos[0]));
@@ -123,16 +122,14 @@ const initMouseClick = () => {
     }
   });
 
-  document.addEventListener('pointermove', () => {
-    isDragging = true;
-  });
+  let touchTime;
 
   document.addEventListener('pointerdown', () => {
-    isDragging = false;
+    touchTime = new Date();
   });
 
   document.addEventListener('pointerup', () => {
-    if (isDragging) {
+    if (new Date() - touchTime > 100) {
       return;
     }
 
@@ -158,6 +155,7 @@ const init = () => {
   renderer.setClearColor(0x9999ff, 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
   const centerPoint = getCenterPoint(cubesPositions);
   const cubesMesh = new THREE.Object3D();
   cubesMesh.position.set(
