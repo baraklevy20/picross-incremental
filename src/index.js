@@ -140,8 +140,8 @@ const initMouseClick = () => {
   });
 
   document.addEventListener('touchstart', (event) => {
-    mouse.x = (event.touches[0].clientX / renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = -(event.touches[0].clientY / renderer.domElement.clientHeight) * 2 + 1;
+    mouse.x = (event.targetTouches[0].pageX / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(event.targetTouches[0].pageY / renderer.domElement.clientHeight) * 2 + 1;
   });
 };
 
