@@ -6,6 +6,7 @@ import RenderComponent from './components/render';
 import PuzzleComponent from './components/puzzle';
 
 const cubeSize = 3;
+let isPuzzleComplete = false;
 
 let intersectedCube;
 let controls;
@@ -17,7 +18,11 @@ let puzzleComponent;
 const animate = () => {
   requestAnimationFrame(animate);
   controls.update();
-  // renderComponent.pivot.rotation.y += 0.03;
+
+  if (isPuzzleComplete) {
+    renderComponent.pivot.rotation.y += 0.03;
+  }
+
   renderer.render(scene, camera);
 };
 
@@ -47,38 +52,47 @@ const onMove = (mouse) => {
 };
 
 const onMouseClick = (mouse) => {
-  const clickedCube = physicsComponent.getIntersectedObject(mouse);
+  if (isPuzzleComplete) {
+    return;
+  }
+  const clickedCubeMesh = physicsComponent.getIntersectedObject(mouse);
 
-  if (clickedCube) {
-    switch (clickedCube.state) {
+  if (clickedCubeMesh) {
+    switch (clickedCubeMesh.cube.state) {
       case 'empty':
         if (mouse.button === 'left') {
-          renderComponent.destroyCube(clickedCube);
+          puzzleComponent.destroyCube(clickedCubeMesh.cube);
+          renderComponent.destroyCube(clickedCubeMesh);
+
+          if (puzzleComponent.isSolved()) {
+            console.log('good job');
+            isPuzzleComplete = true;
+          }
         } else if (mouse.button === 'right') {
-          clickedCube.state = 'paintedEmpty';
-          renderComponent.paintCube(clickedCube);
+          clickedCubeMesh.cube.state = 'paintedEmpty';
+          renderComponent.paintCube(clickedCubeMesh);
         }
         break;
       case 'part':
         if (mouse.button === 'left') {
           // todo add more logic here. split to a function 'onWrongBreak'
-          clickedCube.state = 'brokenPart';
-          renderComponent.setBrokenPartCube(clickedCube);
+          clickedCubeMesh.cube.state = 'brokenPart';
+          renderComponent.setBrokenPartCube(clickedCubeMesh);
         } else if (mouse.button === 'right') {
-          clickedCube.state = 'painted';
-          renderComponent.paintCube(clickedCube);
+          clickedCubeMesh.cube.state = 'painted';
+          renderComponent.paintCube(clickedCubeMesh);
         }
         break;
       case 'painted':
         if (mouse.button === 'right') {
-          clickedCube.state = 'part';
-          renderComponent.unpaintCube(clickedCube);
+          clickedCubeMesh.cube.state = 'part';
+          renderComponent.unpaintCube(clickedCubeMesh);
         }
         break;
       case 'paintedEmpty':
         if (mouse.button === 'right') {
-          clickedCube.state = 'empty';
-          renderComponent.unpaintCube(clickedCube);
+          clickedCubeMesh.cube.state = 'empty';
+          renderComponent.unpaintCube(clickedCubeMesh);
         }
         break;
       default:

@@ -21,7 +21,6 @@ export default class RenderComponent {
     const cube = hint
       ? this.createTextMesh(hint, state)
       : new THREE.Mesh(this.geometry, state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
-    group.state = state;
     cube.position.set(
       cubePosition[0] * this.cubeSize,
       cubePosition[1] * this.cubeSize,
@@ -83,27 +82,27 @@ export default class RenderComponent {
     }
   }
 
-  selectCube(cube) {
-    if (!cube) {
+  selectCube(mesh) {
+    if (!mesh) {
       return;
     }
 
-    if (cube.state === 'empty' || cube.state === 'part') {
-      this.setColor(cube, this.selectedCubeColor);
+    if (mesh.cube.state === 'empty' || mesh.cube.state === 'part') {
+      this.setColor(mesh, this.selectedCubeColor);
     }
   }
 
-  deselectCube(cube) {
-    if (!cube) {
+  deselectCube(mesh) {
+    if (!mesh) {
       return;
     }
 
-    switch (cube.state) {
+    switch (mesh.cube.state) {
       case 'empty':
-        this.setColor(cube, this.emptyCubeColor);
+        this.setColor(mesh, this.emptyCubeColor);
         break;
       case 'part':
-        this.setColor(cube, this.cubeColor);
+        this.setColor(mesh, this.cubeColor);
         break;
       default:
     }
@@ -145,12 +144,12 @@ export default class RenderComponent {
     const yArr = [];
     const zArr = [];
 
-    cubes.forEach((e, i) => {
+    cubes.forEach((cube, i) => {
       const x = Math.floor(i / 100);
       const y = Math.floor(i / 10) % 10;
       const z = i % 10;
 
-      if (e !== 0) {
+      if (cube.state === 'part' || cube.state === 'empty') {
         xArr.push(x);
         yArr.push(y);
         zArr.push(z);
@@ -178,14 +177,15 @@ export default class RenderComponent {
     );
     pivot.add(cubesMesh);
 
-    puzzleComponent.cubes.forEach((value, i) => {
-      if (value >= 0x20) {
-        const cube = this.createCube([
+    puzzleComponent.cubes.forEach((cube, i) => {
+      if (cube.state === 'part' || cube.state === 'empty') {
+        const mesh = this.createCube([
           Math.floor(i / 100),
           Math.floor(i / 10) % 10,
           i % 10,
-        ], value < 0x30 ? 'empty' : 'part', puzzleComponent.hints[i]);
-        cubesMesh.add(cube);
+        ], cube.state, puzzleComponent.hints[i]);
+        mesh.cube = cube;
+        cubesMesh.add(mesh);
       }
     });
 
