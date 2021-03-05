@@ -26,10 +26,10 @@ export default class RenderComponent {
     this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
   }
 
-  createCube(cubePosition, isEmpty) {
+  createCube(cubePosition, isEmpty, hint) {
     const group = new THREE.Group();
-    const cube = cubePosition[0] === 0 && cubePosition[1] === 1
-      ? this.createTextMesh('10', isEmpty, { x: true, y: true, z: true })
+    const cube = hint
+      ? this.createTextMesh(hint, isEmpty)
       : new THREE.Mesh(this.geometry, isEmpty ? this.emptyMaterial.clone() : this.material.clone());
     group.isEmpty = isEmpty;
     cube.position.set(
@@ -51,7 +51,9 @@ export default class RenderComponent {
     return group;
   }
 
-  createTextMesh(number, isEmpty, faces) {
+  createTextMesh({
+    x, y, z, number,
+  }, isEmpty) {
     const canvas = document.createElement('canvas');
     canvas.width = 128;
     canvas.height = 128;
@@ -63,18 +65,19 @@ export default class RenderComponent {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
     ctx.fillText(number, canvas.width / 2, canvas.height / 2);
-    const emptyMaterial = new THREE.MeshBasicMaterial({ color: isEmpty ? this.emptyCubeColor : this.cubeColor });
+    const emptyMaterial = new THREE.MeshBasicMaterial();
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
+    emptyMaterial.color.set(isEmpty ? this.emptyCubeColor : this.cubeColor);
     textMaterial.color.set(isEmpty ? this.emptyCubeColor : this.cubeColor);
 
     const materials = [];
-    materials[0] = faces.x ? textMaterial : emptyMaterial;
-    materials[1] = faces.x ? textMaterial : emptyMaterial;
-    materials[2] = faces.y ? textMaterial : emptyMaterial;
-    materials[3] = faces.y ? textMaterial : emptyMaterial;
-    materials[4] = faces.z ? textMaterial : emptyMaterial;
-    materials[5] = faces.z ? textMaterial : emptyMaterial;
+    materials[0] = x ? textMaterial : emptyMaterial;
+    materials[1] = x ? textMaterial : emptyMaterial;
+    materials[2] = y ? textMaterial : emptyMaterial;
+    materials[3] = y ? textMaterial : emptyMaterial;
+    materials[4] = z ? textMaterial : emptyMaterial;
+    materials[5] = z ? textMaterial : emptyMaterial;
 
     return new THREE.Mesh(this.geometry, materials);
   }
@@ -116,7 +119,10 @@ export default class RenderComponent {
     cube.children.forEach((c) => c.geometry.dispose());
   }
 
-  createPuzzleMesh(cubesPositions, emptyCubesPositions) {
+  createPuzzleMesh(puzzleComponent) {
+    const cubesPositions = puzzleComponent.getCubesPositions();
+    const emptyCubesPositions = puzzleComponent.getEmptyCubesPositions();
+    const hints = puzzleComponent.getHints();
     const pivot = new THREE.Group();
     const centerPoint = getPuzzleCenter(cubesPositions);
     const cubesMesh = new THREE.Object3D();
@@ -127,8 +133,8 @@ export default class RenderComponent {
     );
     pivot.add(cubesMesh);
 
-    cubesPositions.forEach((cubePosition) => {
-      cubesMesh.add(this.createCube(cubePosition, false));
+    cubesPositions.forEach((cubePosition, i) => {
+      cubesMesh.add(this.createCube(cubePosition, false, hints[i]));
     });
 
     emptyCubesPositions.forEach((cubePosition) => {

@@ -58,10 +58,7 @@ const onMouseClick = (mouse) => {
 const initComponents = () => {
   puzzleComponent = new PuzzleComponent();
   renderComponent = new RenderComponent(cubeSize);
-  renderComponent.createPuzzleMesh(
-    puzzleComponent.getCubesPositions(),
-    puzzleComponent.getEmptyCubesPositions(),
-  );
+  renderComponent.createPuzzleMesh(puzzleComponent);
   inputComponent = new InputComponent();
   physicsComponent = new PhysicsComponent(renderComponent.getPivot());
 

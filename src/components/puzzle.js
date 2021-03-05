@@ -30,6 +30,14 @@ export default class PuzzleComponent {
       [4, 2, 0],
       [4, 3, 0],
     ];
+
+    this.hints = [];
+    this.hints[0] = {
+      x: true, y: true, z: true, number: 10,
+    };
+    this.hints[5] = {
+      x: true, number: 10,
+    };
   }
 
   getCubesPositions() {
@@ -38,5 +46,9 @@ export default class PuzzleComponent {
 
   getEmptyCubesPositions() {
     return this.emptyCubesPositions;
+  }
+
+  getHints() {
+    return this.hints;
   }
 }
