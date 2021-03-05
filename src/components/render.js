@@ -1,24 +1,14 @@
 import * as THREE from 'three';
 import '../../styles.css';
 
-// todo move to some utility function?
-const getPuzzleCenter = (cubesPositions) => {
-  const minX = Math.min(...cubesPositions.map((pos) => pos[0]));
-  const maxX = Math.max(...cubesPositions.map((pos) => pos[0]));
-  const minY = Math.min(...cubesPositions.map((pos) => pos[1]));
-  const maxY = Math.max(...cubesPositions.map((pos) => pos[1]));
-  const minZ = Math.min(...cubesPositions.map((pos) => pos[2]));
-  const maxZ = Math.max(...cubesPositions.map((pos) => pos[2]));
-
-  return [(maxX - minX) / 2 + minX, (maxY - minY) / 2 + minY, (maxZ - minZ) / 2 + minZ];
-};
-
 export default class RenderComponent {
   constructor(cubeSize) {
     this.cubeSize = cubeSize;
     this.cubeColor = '#d7d7d7';
     this.emptyCubeColor = '#ffffd7';
     this.selectedCubeColor = '#c7c7c7';
+    this.paintedCubeColor = '#0000ff';
+    this.brokenPartColor = '#ff0000';
     this.geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
     this.material = new THREE.MeshBasicMaterial({ color: this.cubeColor });
     this.emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
@@ -26,12 +16,12 @@ export default class RenderComponent {
     this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
   }
 
-  createCube(cubePosition, isEmpty, hint) {
+  createCube(cubePosition, state, hint) {
     const group = new THREE.Group();
     const cube = hint
-      ? this.createTextMesh(hint, isEmpty)
-      : new THREE.Mesh(this.geometry, isEmpty ? this.emptyMaterial.clone() : this.material.clone());
-    group.isEmpty = isEmpty;
+      ? this.createTextMesh(hint, state)
+      : new THREE.Mesh(this.geometry, state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
+    group.state = state;
     cube.position.set(
       cubePosition[0] * this.cubeSize,
       cubePosition[1] * this.cubeSize,
@@ -53,7 +43,7 @@ export default class RenderComponent {
 
   createTextMesh({
     x, y, z, number,
-  }, isEmpty) {
+  }, state) {
     const canvas = document.createElement('canvas');
     canvas.width = 128;
     canvas.height = 128;
@@ -68,8 +58,8 @@ export default class RenderComponent {
     const emptyMaterial = new THREE.MeshBasicMaterial();
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
-    emptyMaterial.color.set(isEmpty ? this.emptyCubeColor : this.cubeColor);
-    textMaterial.color.set(isEmpty ? this.emptyCubeColor : this.cubeColor);
+    emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
+    textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
 
     const materials = [];
     materials[0] = x ? textMaterial : emptyMaterial;
@@ -82,17 +72,24 @@ export default class RenderComponent {
     return new THREE.Mesh(this.geometry, materials);
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  setColor(cube, color) {
+    if (Array.isArray(cube.children[0].material)) {
+      cube.children[0].material.forEach((m) => {
+        m.color.set(color);
+      });
+    } else {
+      cube.children[0].material.color.set(color);
+    }
+  }
+
   selectCube(cube) {
     if (!cube) {
       return;
     }
 
-    if (Array.isArray(cube.children[0].material)) {
-      cube.children[0].material.forEach((m) => {
-        m.color.set(this.selectedCubeColor);
-      });
-    } else {
-      cube.children[0].material.color.set(this.selectedCubeColor);
+    if (cube.state === 'empty' || cube.state === 'part') {
+      this.setColor(cube, this.selectedCubeColor);
     }
   }
 
@@ -101,13 +98,36 @@ export default class RenderComponent {
       return;
     }
 
-    if (Array.isArray(cube.children[0].material)) {
-      cube.children[0].material.forEach((m) => {
-        m.color.set(cube.isEmpty ? this.emptyCubeColor : this.cubeColor);
-      });
-    } else {
-      cube.children[0].material.color.set(cube.isEmpty ? this.emptyCubeColor : this.cubeColor);
+    switch (cube.state) {
+      case 'empty':
+        this.setColor(cube, this.emptyCubeColor);
+        break;
+      case 'part':
+        this.setColor(cube, this.cubeColor);
+        break;
+      default:
     }
+  }
+
+  paintCube(cube) {
+    if (!cube) {
+      return;
+    }
+
+    this.setColor(cube, this.paintedCubeColor);
+  }
+
+  unpaintCube(cube) {
+    // in the future it might be different. maybe some special effects etc
+    this.deselectCube(cube);
+  }
+
+  setBrokenPartCube(cube) {
+    if (!cube) {
+      return;
+    }
+
+    this.setColor(cube, this.brokenPartColor);
   }
 
   destroyCube(cube) {
@@ -119,12 +139,37 @@ export default class RenderComponent {
     cube.children.forEach((c) => c.geometry.dispose());
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  getPuzzleCenter(cubes) {
+    const xArr = [];
+    const yArr = [];
+    const zArr = [];
+
+    cubes.forEach((e, i) => {
+      const x = Math.floor(i / 100);
+      const y = Math.floor(i / 10) % 10;
+      const z = i % 10;
+
+      if (e !== 0) {
+        xArr.push(x);
+        yArr.push(y);
+        zArr.push(z);
+      }
+    });
+
+    const minX = Math.min(...xArr);
+    const maxX = Math.max(...xArr);
+    const minY = Math.min(...yArr);
+    const maxY = Math.max(...yArr);
+    const minZ = Math.min(...zArr);
+    const maxZ = Math.max(...zArr);
+
+    return [(maxX - minX) / 2 + minX, (maxY - minY) / 2 + minY, (maxZ - minZ) / 2 + minZ];
+  }
+
   createPuzzleMesh(puzzleComponent) {
-    const cubesPositions = puzzleComponent.getCubesPositions();
-    const emptyCubesPositions = puzzleComponent.getEmptyCubesPositions();
-    const hints = puzzleComponent.getHints();
     const pivot = new THREE.Group();
-    const centerPoint = getPuzzleCenter(cubesPositions);
+    const centerPoint = this.getPuzzleCenter(puzzleComponent.cubes);
     const cubesMesh = new THREE.Object3D();
     cubesMesh.position.set(
       -centerPoint[0] * this.cubeSize,
@@ -133,18 +178,17 @@ export default class RenderComponent {
     );
     pivot.add(cubesMesh);
 
-    cubesPositions.forEach((cubePosition, i) => {
-      cubesMesh.add(this.createCube(cubePosition, false, hints[i]));
-    });
-
-    emptyCubesPositions.forEach((cubePosition) => {
-      cubesMesh.add(this.createCube(cubePosition, true));
+    puzzleComponent.cubes.forEach((value, i) => {
+      if (value >= 0x20) {
+        const cube = this.createCube([
+          Math.floor(i / 100),
+          Math.floor(i / 10) % 10,
+          i % 10,
+        ], value < 0x30 ? 'empty' : 'part', puzzleComponent.hints[i]);
+        cubesMesh.add(cube);
+      }
     });
 
     this.pivot = pivot;
-  }
-
-  getPivot() {
-    return this.pivot;
   }
 }

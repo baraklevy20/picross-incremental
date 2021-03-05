@@ -17,21 +17,17 @@ let puzzleComponent;
 const animate = () => {
   requestAnimationFrame(animate);
   controls.update();
-  // renderComponent.getPivot().rotation.y += 0.03;
+  // renderComponent.pivot.rotation.y += 0.03;
   renderer.render(scene, camera);
 };
 
-const onCubeClick = (cube) => {
-  renderComponent.destroyCube(cube);
-};
-
 const onMove = (mouse) => {
-  const intersectedObject = physicsComponent.getIntersectedObject(mouse);
+  const newIntersectedCube = physicsComponent.getIntersectedObject(mouse);
 
   // If we are pointing at a cube
-  if (intersectedObject) {
+  if (newIntersectedCube) {
     // If it's the same cube we're already pointing at, ignore
-    if (intersectedCube === intersectedObject) {
+    if (intersectedCube === newIntersectedCube) {
       return;
     }
 
@@ -41,7 +37,7 @@ const onMove = (mouse) => {
     }
 
     // Select the newly pointed-at cube
-    intersectedCube = intersectedObject;
+    intersectedCube = newIntersectedCube;
     renderComponent.selectCube(intersectedCube);
   } else {
     // If we aren't pointing at any cube, deselect the previously pointed-at cube
@@ -51,8 +47,43 @@ const onMove = (mouse) => {
 };
 
 const onMouseClick = (mouse) => {
-  // todo in the future this will be more than just a cube click
-  onCubeClick(physicsComponent.getIntersectedObject(mouse));
+  const clickedCube = physicsComponent.getIntersectedObject(mouse);
+
+  if (clickedCube) {
+    switch (clickedCube.state) {
+      case 'empty':
+        if (mouse.button === 'left') {
+          renderComponent.destroyCube(clickedCube);
+        } else if (mouse.button === 'right') {
+          clickedCube.state = 'paintedEmpty';
+          renderComponent.paintCube(clickedCube);
+        }
+        break;
+      case 'part':
+        if (mouse.button === 'left') {
+          // todo add more logic here. split to a function 'onWrongBreak'
+          clickedCube.state = 'brokenPart';
+          renderComponent.setBrokenPartCube(clickedCube);
+        } else if (mouse.button === 'right') {
+          clickedCube.state = 'painted';
+          renderComponent.paintCube(clickedCube);
+        }
+        break;
+      case 'painted':
+        if (mouse.button === 'right') {
+          clickedCube.state = 'part';
+          renderComponent.unpaintCube(clickedCube);
+        }
+        break;
+      case 'paintedEmpty':
+        if (mouse.button === 'right') {
+          clickedCube.state = 'empty';
+          renderComponent.unpaintCube(clickedCube);
+        }
+        break;
+      default:
+    }
+  }
 };
 
 const initComponents = () => {
@@ -60,7 +91,7 @@ const initComponents = () => {
   renderComponent = new RenderComponent(cubeSize);
   renderComponent.createPuzzleMesh(puzzleComponent);
   inputComponent = new InputComponent();
-  physicsComponent = new PhysicsComponent(renderComponent.getPivot());
+  physicsComponent = new PhysicsComponent(renderComponent.pivot);
 
   inputComponent.getObservable().subscribe(({ type, mouse }) => {
     switch (type) {
@@ -97,7 +128,7 @@ const init = () => {
   initComponents();
   initOrbitControl();
   initCamera();
-  scene.add(renderComponent.getPivot());
+  scene.add(renderComponent.pivot);
 };
 
 const main = () => {

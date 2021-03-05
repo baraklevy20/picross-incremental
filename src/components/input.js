@@ -28,10 +28,13 @@ export default class InputController {
 
       fromEvent(document, 'pointerup')
         .pipe(filter(() => new Date() - this.touchTime < 200))
-        .subscribe(() => {
+        .subscribe((e) => {
           subscriber.next({
             type: 'click',
-            mouse: this.mouse,
+            mouse: {
+              ...this.mouse,
+              button: e.button === 0 ? 'left' : 'right',
+            },
           });
         });
 
