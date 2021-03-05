@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import '../../styles.css';
 
 // todo move to some utility function?
 const getPuzzleCenter = (cubesPositions) => {
@@ -15,8 +16,11 @@ const getPuzzleCenter = (cubesPositions) => {
 export default class RenderComponent {
   constructor(cubeSize) {
     this.cubeSize = cubeSize;
+    this.cubeColor = '#d7d7d7';
+    this.emptyCubeColor = '#ffffd7';
+    this.selectedCubeColor = '#c7c7c7';
     this.geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-    this.material = new THREE.MeshBasicMaterial({ color: 0xd7d7d7 });
+    this.material = new THREE.MeshBasicMaterial({ color: this.cubeColor });
     this.emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
     this.selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
     this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
@@ -24,7 +28,9 @@ export default class RenderComponent {
 
   createCube(cubePosition, isEmpty) {
     const group = new THREE.Group();
-    const cube = new THREE.Mesh(this.geometry, isEmpty ? this.emptyMaterial : this.material);
+    const cube = cubePosition[0] === 0 && cubePosition[1] === 1
+      ? this.createTextMesh('10', isEmpty, { x: true, y: true, z: true })
+      : new THREE.Mesh(this.geometry, isEmpty ? this.emptyMaterial.clone() : this.material.clone());
     group.isEmpty = isEmpty;
     cube.position.set(
       cubePosition[0] * this.cubeSize,
@@ -32,7 +38,7 @@ export default class RenderComponent {
       cubePosition[2] * this.cubeSize,
     );
 
-    const outline = new THREE.Mesh(this.geometry, this.outlineMaterial);
+    const outline = new THREE.Mesh(this.geometry, this.outlineMaterial.clone());
     outline.position.set(
       cubePosition[0] * this.cubeSize,
       cubePosition[1] * this.cubeSize,
@@ -42,8 +48,35 @@ export default class RenderComponent {
 
     group.add(cube);
     group.add(outline);
-
     return group;
+  }
+
+  createTextMesh(number, isEmpty, faces) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '64px CrashNumberingGothic';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'black';
+    ctx.fillText(number, canvas.width / 2, canvas.height / 2);
+    const emptyMaterial = new THREE.MeshBasicMaterial({ color: isEmpty ? this.emptyCubeColor : this.cubeColor });
+    const textMaterial = new THREE.MeshBasicMaterial();
+    textMaterial.map = new THREE.CanvasTexture(canvas);
+    textMaterial.color.set(isEmpty ? this.emptyCubeColor : this.cubeColor);
+
+    const materials = [];
+    materials[0] = faces.x ? textMaterial : emptyMaterial;
+    materials[1] = faces.x ? textMaterial : emptyMaterial;
+    materials[2] = faces.y ? textMaterial : emptyMaterial;
+    materials[3] = faces.y ? textMaterial : emptyMaterial;
+    materials[4] = faces.z ? textMaterial : emptyMaterial;
+    materials[5] = faces.z ? textMaterial : emptyMaterial;
+
+    return new THREE.Mesh(this.geometry, materials);
   }
 
   selectCube(cube) {
@@ -51,8 +84,13 @@ export default class RenderComponent {
       return;
     }
 
-    // eslint-disable-next-line no-param-reassign
-    cube.children[0].material = this.selectedMaterial;
+    if (Array.isArray(cube.children[0].material)) {
+      cube.children[0].material.forEach((m) => {
+        m.color.set(this.selectedCubeColor);
+      });
+    } else {
+      cube.children[0].material.color.set(this.selectedCubeColor);
+    }
   }
 
   deselectCube(cube) {
@@ -60,8 +98,13 @@ export default class RenderComponent {
       return;
     }
 
-    // eslint-disable-next-line no-param-reassign
-    cube.children[0].material = cube.isEmpty ? this.emptyMaterial : this.material;
+    if (Array.isArray(cube.children[0].material)) {
+      cube.children[0].material.forEach((m) => {
+        m.color.set(cube.isEmpty ? this.emptyCubeColor : this.cubeColor);
+      });
+    } else {
+      cube.children[0].material.color.set(cube.isEmpty ? this.emptyCubeColor : this.cubeColor);
+    }
   }
 
   destroyCube(cube) {

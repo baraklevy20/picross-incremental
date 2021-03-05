@@ -27,7 +27,7 @@ export default class InputController {
       });
 
       fromEvent(document, 'pointerup')
-        .pipe(filter(() => new Date() - this.touchTime < 100))
+        .pipe(filter(() => new Date() - this.touchTime < 200))
         .subscribe(() => {
           subscriber.next({
             type: 'click',

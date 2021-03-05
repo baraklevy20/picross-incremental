@@ -1,5 +1,4 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-
 import { renderer, scene, camera } from './context';
 import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
@@ -105,8 +104,11 @@ const init = () => {
 };
 
 const main = () => {
+  // Remove font loader div
+  document.getElementById('preloadfont').remove();
   init();
   animate();
 };
 
-main();
+// todo check compatibility
+document.fonts.ready.then(main);
