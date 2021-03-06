@@ -40,9 +40,13 @@ export default class RenderComponent {
     return group;
   }
 
-  createTextMesh({
-    x, y, z, number,
-  }, state) {
+  createFaceMaterial(number, state) {
+    if (number === undefined) {
+      const emptyMaterial = new THREE.MeshBasicMaterial();
+      emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
+      return emptyMaterial;
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = 128;
     canvas.height = 128;
@@ -54,19 +58,27 @@ export default class RenderComponent {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
     ctx.fillText(number, canvas.width / 2, canvas.height / 2);
-    const emptyMaterial = new THREE.MeshBasicMaterial();
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
-    emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
     textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
 
+    return textMaterial;
+  }
+
+  createTextMesh({
+    x, y, z,
+  }, state) {
+    const xFace = this.createFaceMaterial(x, state);
+    const yFace = this.createFaceMaterial(y, state);
+    const zFace = this.createFaceMaterial(z, state);
+
     const materials = [];
-    materials[0] = x ? textMaterial : emptyMaterial;
-    materials[1] = x ? textMaterial : emptyMaterial;
-    materials[2] = y ? textMaterial : emptyMaterial;
-    materials[3] = y ? textMaterial : emptyMaterial;
-    materials[4] = z ? textMaterial : emptyMaterial;
-    materials[5] = z ? textMaterial : emptyMaterial;
+    materials[0] = xFace;
+    materials[1] = xFace;
+    materials[2] = yFace;
+    materials[3] = yFace;
+    materials[4] = zFace;
+    materials[5] = zFace;
 
     return new THREE.Mesh(this.geometry, materials);
   }

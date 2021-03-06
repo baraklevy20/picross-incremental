@@ -2,10 +2,10 @@ export default class PuzzleComponent {
   constructor() {
     this.hints = [];
     this.hints[0] = {
-      x: true, y: true, z: true, number: 10,
+      x: 1, y: 2, z: 3,
     };
-    this.hints[5] = {
-      x: true, number: 10,
+    this.hints[40] = {
+      x: 5, y: 6, z: 7,
     };
 
     // eslint-disable-next-line max-len
