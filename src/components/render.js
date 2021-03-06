@@ -40,14 +40,15 @@ export default class RenderComponent {
     return group;
   }
 
-  createFaceMaterial(number, state) {
-    if (number === undefined) {
+  createFaceMaterial(faceHint, state) {
+    if (faceHint === undefined) {
       const emptyMaterial = new THREE.MeshBasicMaterial();
       emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
       return emptyMaterial;
     }
 
     const canvas = document.createElement('canvas');
+    const padding = 20;
     canvas.width = 128;
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
@@ -57,7 +58,30 @@ export default class RenderComponent {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
-    ctx.fillText(number, canvas.width / 2, canvas.height / 2);
+
+    if (faceHint.spaces > 0) {
+      ctx.beginPath();
+
+      if (faceHint.spaces === 1) {
+        ctx.arc(
+          canvas.width / 2,
+          canvas.height / 2,
+          (canvas.width - 2 * padding) / 2,
+          0,
+          2 * Math.PI,
+        );
+      } else if (faceHint.spaces > 1) {
+        ctx.rect(
+          padding,
+          padding,
+          canvas.width - 2 * padding,
+          canvas.height - 2 * padding,
+        );
+      }
+
+      ctx.stroke();
+    }
+    ctx.fillText(faceHint.count, canvas.width / 2, canvas.height / 2);
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
     textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
