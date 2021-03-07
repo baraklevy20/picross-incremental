@@ -215,11 +215,14 @@ export default class RenderComponent {
 
     puzzleComponent.cubes.forEach((cube, i) => {
       if (cube.state === 'part' || cube.state === 'empty') {
-        const mesh = this.createCube([
-          Math.floor(i / 100),
-          Math.floor(i / 10) % 10,
-          i % 10,
-        ], cube.state, puzzleComponent.hints[i]);
+        const x = Math.floor(i / 100);
+        const y = Math.floor(i / 10) % 10;
+        const z = i % 10;
+        const mesh = this.createCube([x, y, z], cube.state, {
+          x: puzzleComponent.hints.x[y][z],
+          y: puzzleComponent.hints.y[x][z],
+          z: puzzleComponent.hints.z[x][y],
+        });
         mesh.cube = cube;
         cubesMesh.add(mesh);
       }

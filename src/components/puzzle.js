@@ -19,19 +19,37 @@ export default class PuzzleComponent {
   }
 
   generateHints() {
-    const hints = [];
+    const hints = {
+      x: [],
+      y: [],
+      z: [],
+    };
+
+    for (let y = 0; y < 10; y += 1) {
+      hints.x[y] = [];
+      for (let z = 0; z < 10; z += 1) {
+        hints.x[y][z] = this.generateLineHint(null, y, z, 0);
+      }
+    }
+
     for (let x = 0; x < 10; x += 1) {
+      hints.y[x] = [];
+      for (let z = 0; z < 10; z += 1) {
+        hints.y[x][z] = this.generateLineHint(x, null, z, 1);
+      }
+    }
+
+    for (let x = 0; x < 10; x += 1) {
+      hints.z[x] = [];
       for (let y = 0; y < 10; y += 1) {
-        for (let z = 0; z < 10; z += 1) {
-          hints[x * 100 + y * 10 + z] = this.generateHint(x, y, z);
-        }
+        hints.z[x][y] = this.generateLineHint(x, y, null, 2);
       }
     }
 
     return hints;
   }
 
-  generateFaceHint(x0, y0, z0, axis) {
+  generateLineHint(x0, y0, z0, axis) {
     let previous;
     let count = 0;
     let spaces = 0;
@@ -62,15 +80,11 @@ export default class PuzzleComponent {
     return { count, spaces };
   }
 
-  generateHint(x0, y0, z0) {
-    return {
-      x: this.generateFaceHint(x0, y0, z0, 0),
-      y: this.generateFaceHint(x0, y0, z0, 1),
-      // z: this.generateFaceHint(x0, y0, z0, 2),
-    };
-  }
-
   isSolved() {
     return this.cubes.every((c) => c.state !== 'empty' && c.state !== 'paintedEmpty');
+  }
+
+  getLeftmostPossibleSolution() {
+
   }
 }
