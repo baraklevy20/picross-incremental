@@ -66,7 +66,7 @@ export default class PuzzleComponent {
     return {
       x: this.generateFaceHint(x0, y0, z0, 0),
       y: this.generateFaceHint(x0, y0, z0, 1),
-      z: this.generateFaceHint(x0, y0, z0, 2),
+      // z: this.generateFaceHint(x0, y0, z0, 2),
     };
   }
 

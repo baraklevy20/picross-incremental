@@ -48,16 +48,17 @@ export default class RenderComponent {
     }
 
     const canvas = document.createElement('canvas');
-    const padding = 20;
-    canvas.width = 128;
-    canvas.height = 128;
+    const padding = 60;
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = '64px CrashNumberingGothic';
+    ctx.font = `${canvas.width * 3 / 4}px CrashNumberingGothic`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
+    ctx.lineWidth = 20;
 
     if (faceHint.spaces > 0) {
       ctx.beginPath();
@@ -85,7 +86,6 @@ export default class RenderComponent {
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
     textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
-
     return textMaterial;
   }
 
@@ -226,5 +226,7 @@ export default class RenderComponent {
     });
 
     this.pivot = pivot;
+    this.pivot.rotation.x += 0.1;
+    this.pivot.rotation.y += 0.5;
   }
 }

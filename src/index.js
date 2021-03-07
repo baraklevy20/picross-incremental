@@ -5,7 +5,7 @@ import PhysicsComponent from './components/physics';
 import RenderComponent from './components/render';
 import PuzzleComponent from './components/puzzle';
 
-const cubeSize = 3;
+const cubeSize = 1;
 let isPuzzleComplete = false;
 
 let intersectedCube;
@@ -31,6 +31,7 @@ const onMove = (mouse) => {
 
   // If we are pointing at a cube
   if (newIntersectedCube) {
+    controls.enabled = false;
     // If it's the same cube we're already pointing at, ignore
     if (intersectedCube === newIntersectedCube) {
       return;
@@ -48,6 +49,7 @@ const onMove = (mouse) => {
     // If we aren't pointing at any cube, deselect the previously pointed-at cube
     renderComponent.deselectCube(intersectedCube);
     intersectedCube = null;
+    controls.enabled = true;
   }
 };
 
@@ -55,6 +57,7 @@ const onMouseClick = (mouse) => {
   if (isPuzzleComplete) {
     return;
   }
+
   const clickedCubeMesh = physicsComponent.getIntersectedObject(mouse);
 
   if (clickedCubeMesh) {
@@ -123,6 +126,7 @@ const initComponents = () => {
 const initRenderer = () => {
   renderer.setClearColor(0x9999ff, 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
   document.body.appendChild(renderer.domElement);
 };
 
@@ -133,6 +137,8 @@ const initOrbitControl = () => {
 };
 
 const initCamera = () => {
+  camera.position.x = -cubeSize * 2;
+  camera.position.y = cubeSize * 5;
   camera.position.z = cubeSize * 10;
   controls.update();
 };
