@@ -16,10 +16,10 @@ export default class RenderComponent {
     this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
   }
 
-  createCube(cubePosition, state, hint) {
+  createCube(cubePosition, state, clue) {
     const group = new THREE.Group();
-    const cube = hint
-      ? this.createTextMesh(hint, state)
+    const cube = clue
+      ? this.createTextMesh(clue, state)
       : new THREE.Mesh(this.geometry, state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
     cube.position.set(
       cubePosition[0] * this.cubeSize,
@@ -40,8 +40,8 @@ export default class RenderComponent {
     return group;
   }
 
-  createFaceMaterial(faceHint, state) {
-    if (faceHint === undefined) {
+  createFaceMaterial(faceClue, state) {
+    if (faceClue === undefined) {
       const emptyMaterial = new THREE.MeshBasicMaterial();
       emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
       return emptyMaterial;
@@ -60,10 +60,10 @@ export default class RenderComponent {
     ctx.fillStyle = 'black';
     ctx.lineWidth = 20;
 
-    if (faceHint.spaces > 0) {
+    if (faceClue.spaces > 0) {
       ctx.beginPath();
 
-      if (faceHint.spaces === 1) {
+      if (faceClue.spaces === 1) {
         ctx.arc(
           canvas.width / 2,
           canvas.height / 2,
@@ -71,7 +71,7 @@ export default class RenderComponent {
           0,
           2 * Math.PI,
         );
-      } else if (faceHint.spaces > 1) {
+      } else if (faceClue.spaces > 1) {
         ctx.rect(
           padding,
           padding,
@@ -82,7 +82,7 @@ export default class RenderComponent {
 
       ctx.stroke();
     }
-    ctx.fillText(faceHint.count, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(faceClue.count, canvas.width / 2, canvas.height / 2);
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
     textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
@@ -219,9 +219,9 @@ export default class RenderComponent {
         const y = Math.floor(i / 10) % 10;
         const z = i % 10;
         const mesh = this.createCube([x, y, z], cube.state, {
-          x: puzzleComponent.hints.x[y][z],
-          y: puzzleComponent.hints.y[x][z],
-          z: puzzleComponent.hints.z[x][y],
+          x: puzzleComponent.clues.x[y][z],
+          y: puzzleComponent.clues.y[x][z],
+          z: puzzleComponent.clues.z[x][y],
         });
         mesh.cube = cube;
         cubesMesh.add(mesh);

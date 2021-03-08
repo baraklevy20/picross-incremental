@@ -5,11 +5,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Chrome",
+      "type": "chrome",
       "request": "launch",
-      "type": "pwa-chrome",
-      "file": "./src/index.html",
-      "webRoot": "${workspaceFolder}"
+      "name": "Launch Chrome against localhost",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceRoot}",
+      "sourceMaps": true,
+      "trace": true
     }
     
   ]
