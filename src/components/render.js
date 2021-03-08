@@ -180,16 +180,16 @@ export default class RenderComponent {
     const yArr = [];
     const zArr = [];
 
-    cubes.forEach((cube, i) => {
-      const x = Math.floor(i / 100);
-      const y = Math.floor(i / 10) % 10;
-      const z = i % 10;
-
-      if (cube.state === 'part' || cube.state === 'empty') {
-        xArr.push(x);
-        yArr.push(y);
-        zArr.push(z);
-      }
+    cubes.forEach((face, x) => {
+      face.forEach((line, y) => {
+        line.forEach((cube, z) => {
+          if (cube.state === 'part' || cube.state === 'empty') {
+            xArr.push(x);
+            yArr.push(y);
+            zArr.push(z);
+          }
+        });
+      });
     });
 
     const minX = Math.min(...xArr);
@@ -213,19 +213,20 @@ export default class RenderComponent {
     );
     pivot.add(cubesMesh);
 
-    puzzleComponent.cubes.forEach((cube, i) => {
-      if (cube.state === 'part' || cube.state === 'empty') {
-        const x = Math.floor(i / 100);
-        const y = Math.floor(i / 10) % 10;
-        const z = i % 10;
-        const mesh = this.createCube([x, y, z], cube.state, {
-          x: puzzleComponent.clues.x[y][z],
-          y: puzzleComponent.clues.y[x][z],
-          z: puzzleComponent.clues.z[x][y],
+    puzzleComponent.cubes.forEach((face, x) => {
+      face.forEach((line, y) => {
+        line.forEach((cube, z) => {
+          if (cube.state === 'part' || cube.state === 'empty') {
+            const mesh = this.createCube([x, y, z], cube.state, {
+              x: puzzleComponent.clues.x[y][z],
+              y: puzzleComponent.clues.y[x][z],
+              z: puzzleComponent.clues.z[x][y],
+            });
+            mesh.cube = cube;
+            cubesMesh.add(mesh);
+          }
         });
-        mesh.cube = cube;
-        cubesMesh.add(mesh);
-      }
+      });
     });
 
     this.pivot = pivot;
