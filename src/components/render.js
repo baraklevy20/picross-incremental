@@ -18,7 +18,7 @@ export default class RenderComponent {
 
   createCube(cubePosition, state, clue) {
     const group = new THREE.Group();
-    const cube = clue
+    const cube = clue && (clue.x || clue.y || clue.z)
       ? this.createTextMesh(clue, state)
       : new THREE.Mesh(this.geometry, state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
     cube.position.set(
@@ -218,9 +218,9 @@ export default class RenderComponent {
         line.forEach((cube, z) => {
           if (cube.state === 'part' || cube.state === 'empty') {
             const mesh = this.createCube([x, y, z], cube.state, {
-              x: puzzleComponent.clues.x[y][z],
-              y: puzzleComponent.clues.y[x][z],
-              z: puzzleComponent.clues.z[x][y],
+              x: puzzleComponent.clues.x?.[y]?.[z],
+              y: puzzleComponent.clues.y?.[x]?.[z],
+              z: puzzleComponent.clues.z?.[x]?.[y],
             });
             mesh.cube = cube;
             cubesMesh.add(mesh);

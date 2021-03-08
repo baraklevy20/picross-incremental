@@ -23,18 +23,191 @@ export default class PuzzleComponent {
     this.cubes = array;
 
     this.clues = this.generateClues();
+    this.removeClues();
     this.cubes = this.cubes.map((face) => face.map((line) => line.map((cube) => {
       const state = cube >= 0x30 ? 'part' : (cube >= 0x20 ? 'empty' : 'nothing');
       return {
         state,
       };
     })));
-
-    this.solveLine();
   }
 
-  solve() {
+  removeClues() {
+    const lines = this.getLinesWithoutSolid();
+    let clues = [...this.clues.x, ...this.clues.y, ...this.clues.z].flat(2);
+    const scores = clues.map((clue) => {
+      let axis;
+      let first;
+      let second;
+      if (clue.x === null) {
+        axis = 'x';
+        first = clue.y;
+        second = clue.z;
+      } else if (clue.y === null) {
+        axis = 'y';
+        first = clue.x;
+        second = clue.z;
+      } else {
+        axis = 'z';
+        first = clue.x;
+        second = clue.y;
+      }
 
+      const lineWithoutZeroes = lines[axis][first][second].filter((c) => c !== 0);
+      const changes = this.solveLine(lines[axis][first][second], clue);
+      const added = changes.reduce((sum, change) => (sum + change.value < 0x40 ? 1 : 0), 0);
+      const removed = changes.reduce((sum, change) => (sum + change >= 0x40 ? 1 : 0), 0);
+
+      // return added + removed ** 2;
+      // // Special case
+      if (changes.length === 1 && lineWithoutZeroes.length === 1) {
+        // return 2;
+      }
+      // return changes.length / lineWithoutZeroes.length;
+      return changes.length;
+    });
+    clues = clues.map((c, i) => ({ ...c, score: scores[i] }));
+
+    clues.sort((a, b) => b.score - a.score);
+
+    // todo instead of shuffle, sort clues by best to worse (best = solves entire line)
+    // // Shuffle clues
+    // for (let i = clues.length - 1; i > 0; i -= 1) {
+    //   const j = Math.floor(Math.random() * (i + 1));
+    //   const temp = clues[i];
+    //   clues[i] = clues[j];
+    //   clues[j] = temp;
+    // }
+
+    // Try to remove clues one by one until the puzzle isn't solvable
+    for (let i = 0; i < clues.length; i += 1) {
+      const currentClue = clues[i];
+      clues[i] = null;
+      this.setClues(clues);
+      if (!this.isSolvable(this.getLinesWithoutSolid())) {
+        clues[i] = currentClue;
+        this.setClues(clues);
+      }
+    }
+
+    console.log(clues.filter((c) => c !== null).length);
+  }
+
+  setClues(flattenClues) {
+    this.clues = { x: [], y: [], z: [] };
+    let axis;
+    let first;
+    let second;
+
+    flattenClues.forEach((clue) => {
+      if (!clue) {
+        return;
+      }
+
+      if (clue.x === null) {
+        axis = 'x';
+        first = clue.y;
+        second = clue.z;
+      } else if (clue.y === null) {
+        axis = 'y';
+        first = clue.x;
+        second = clue.z;
+      } else {
+        axis = 'z';
+        first = clue.x;
+        second = clue.y;
+      }
+      if (!this.clues[axis][first]) {
+        this.clues[axis][first] = [];
+      }
+      this.clues[axis][first][second] = clue;
+    });
+  }
+
+  isSolvable(lines) {
+    let changed = true;
+
+    // Solve the board until there are no changes
+    while (changed) {
+      changed = false;
+      for (let i = 0; i < lines.x.length; i += 1) {
+        for (let j = 0; j < lines.x[i].length; j += 1) {
+          const changes = this.solveLine(lines.x[i][j], this.clues.x?.[i]?.[j]);
+          changed = changed || changes.length > 0;
+
+          changes.forEach((change) => {
+            lines.x[i][j][change.index] = change.value;
+            lines.y[change.index][j][i] = change.value;
+            lines.z[change.index][i][j] = change.value;
+          });
+        }
+      }
+
+      for (let i = 0; i < lines.y.length; i += 1) {
+        for (let j = 0; j < lines.y[i].length; j += 1) {
+          const changes = this.solveLine(lines.y[i][j], this.clues.y?.[i]?.[j]);
+          changed = changed || changes.length > 0;
+
+          changes.forEach((change) => {
+            lines.x[change.index][j][i] = change.value;
+            lines.y[i][j][change.index] = change.value;
+            lines.z[i][change.index][j] = change.value;
+          });
+        }
+      }
+
+      for (let i = 0; i < lines.z.length; i += 1) {
+        for (let j = 0; j < lines.z[i].length; j += 1) {
+          const changes = this.solveLine(lines.z[i][j], this.clues.z?.[i]?.[j]);
+          changed = changed || changes.length > 0;
+
+          changes.forEach((change) => {
+            lines.x[j][change.index][i] = change.value;
+            lines.y[i][change.index][j] = change.value;
+            lines.z[i][j][change.index] = change.value;
+          });
+        }
+      }
+    }
+
+    // In the end, either there's a solution or no solution.
+    return this.isSolvedByLines(lines);
+  }
+
+  getLinesWithoutSolid() {
+    const lines = {
+      x: [],
+      y: [],
+      z: [],
+    };
+
+    for (let y = 0; y < 10; y += 1) {
+      lines.x[y] = [];
+      for (let z = 0; z < 10; z += 1) {
+        lines.x[y][z] = this.cubes
+          .map((face) => face[y][z])
+          .map((cube) => (cube >= 0x30 && cube < 0x40 ? 0x20 : cube));
+      }
+    }
+
+    for (let x = 0; x < 10; x += 1) {
+      lines.y[x] = [];
+      for (let z = 0; z < 10; z += 1) {
+        lines.y[x][z] = this.cubes[x]
+          .map((line) => line[z])
+          .map((cube) => (cube >= 0x30 && cube < 0x40 ? 0x20 : cube));
+      }
+    }
+
+    for (let x = 0; x < 10; x += 1) {
+      lines.z[x] = [];
+      for (let y = 0; y < 10; y += 1) {
+        lines.z[x][y] = this.cubes[x][y]
+          .map((cube) => (cube >= 0x30 && cube < 0x40 ? 0x20 : cube));
+      }
+    }
+
+    return lines;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -50,24 +223,37 @@ export default class PuzzleComponent {
       z: [],
     };
 
+    // todo replace 10 here with something
     for (let y = 0; y < 10; y += 1) {
       clues.x[y] = [];
       for (let z = 0; z < 10; z += 1) {
-        clues.x[y][z] = this.generateLineClue(null, y, z, 0);
+        const clue = this.generateLineClue(null, y, z, 0);
+
+        if (clue) {
+          clues.x[y][z] = clue;
+        }
       }
     }
 
     for (let x = 0; x < 10; x += 1) {
       clues.y[x] = [];
       for (let z = 0; z < 10; z += 1) {
-        clues.y[x][z] = this.generateLineClue(x, null, z, 1);
+        const clue = this.generateLineClue(x, null, z, 1);
+
+        if (clue) {
+          clues.y[x][z] = clue;
+        }
       }
     }
 
     for (let x = 0; x < 10; x += 1) {
       clues.z[x] = [];
       for (let y = 0; y < 10; y += 1) {
-        clues.z[x][y] = this.generateLineClue(x, y, null, 2);
+        const clue = this.generateLineClue(x, y, null, 2);
+
+        if (clue) {
+          clues.z[x][y] = clue;
+        }
       }
     }
 
@@ -96,12 +282,23 @@ export default class PuzzleComponent {
       previous = cube;
     }
 
+    // If the entire line is 0, return null
+    if (count === 0) {
+      return null;
+    }
+
     // If we finished with a space, remove the last space
     if (previous < 0x30) {
       spaces -= 1;
     }
 
-    return { count, spaces };
+    return {
+      count,
+      spaces,
+      x: x0,
+      y: y0,
+      z: z0,
+    };
   }
 
   isSolved() {
@@ -109,6 +306,12 @@ export default class PuzzleComponent {
       .every((face) => face
         .every((line) => line
           .every((c) => c.state !== 'empty' && c.state !== 'paintedEmpty')));
+  }
+
+  isSolvedByLines(lines) {
+    return lines.x.every((y) => y.every((z) => z.every((c) => c === 0 || (c >= 0x30 && c < 0x50))))
+      && lines.y.every((x) => x.every((z) => z.every((c) => c === 0 || (c >= 0x30 && c < 0x50))))
+      && lines.z.every((x) => x.every((y) => y.every((c) => c === 0 || (c >= 0x30 && c < 0x50))));
   }
 
   solveLineWithBlocks(line, blocks) {
@@ -138,7 +341,7 @@ export default class PuzzleComponent {
     }
 
     for (let i = 0; i < line.length; i += 1) {
-      if (this.isEmpty(blocks, leftmostSolution, rightmostSolution, i)) {
+      if (line[i] !== 0 && this.isEmpty(blocks, leftmostSolution, rightmostSolution, i)) {
         solution[i] = 0x40;
       }
     }
@@ -161,23 +364,25 @@ export default class PuzzleComponent {
     return combinations;
   }
 
-  solveLine() {
-    // const clue = this.clues.x[0][0];
-    const clue = { count: 4, spaces: 1 };
-    const line = [0x20, 0x30, 0x40, 0x20, 0x20, 0x20];
-    const solution = [...line];
+  solveLine(line, clue) {
+    if (!clue) {
+      return [];
+    }
+
+    const changes = [];
     const blocks = this.getAllPossibleBlockCombinations(clue);
 
     const allPossibleSolutions = blocks
       .map((b) => this.solveLineWithBlocks(line, b))
       .filter((s) => !!s);
     for (let i = 0; i < line.length; i += 1) {
-      if (this.areAllCellsSame(allPossibleSolutions, i)) {
-        solution[i] = allPossibleSolutions[0][i];
+      if (this.areAllCellsSame(allPossibleSolutions, i)
+        && line[i] !== allPossibleSolutions[0][i]) {
+        changes.push({ index: i, value: allPossibleSolutions[0][i] });
       }
     }
 
-    return solution;
+    return changes;
   }
 
   areAllCellsSame(solutions, index) {
@@ -332,8 +537,8 @@ export default class PuzzleComponent {
 
     for (let i = 0; i < block; i += 1) {
       // If the current block is solid or empty, it can be placed.
-      // If it's a space, it cannot be placed here.
-      if (line[i + position] >= 0x40) {
+      // If it's a space or non-game cube, it cannot be placed here.
+      if (line[i + position] >= 0x40 || line[i + position] === 0) {
         return false;
       }
     }
