@@ -88,6 +88,7 @@ const onMouseClick = (mouse) => {
           // todo add more logic here. split to a function 'onWrongBreak'
           clickedCubeMesh.cube.state = 'brokenPart';
           renderComponent.setBrokenPartCube(clickedCubeMesh);
+          puzzleComponent.onBrokenSolid();
         } else if (mouse.button === 'right') {
           clickedCubeMesh.cube.state = 'painted';
           renderComponent.paintCube(clickedCubeMesh);

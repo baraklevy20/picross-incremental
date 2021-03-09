@@ -99,7 +99,26 @@ export default class GameComponent {
   }
 
   onPuzzleComplete() {
-    this.setGold(this.gold + this.puzzle.numberOfSolids);
+    let reward = this.puzzle.numberOfSolids * this.getGoldPerDestroyedCube();
+    const time = false;
+    const noMistakes = this.puzzle.brokenSolids === 0;
+    let perfectGameMultiplier = 1;
+    if (time) {
+      perfectGameMultiplier *= 1.5;
+    }
+
+    if (noMistakes) {
+      perfectGameMultiplier *= 1.5;
+    }
+
+    reward *= perfectGameMultiplier;
+
+    // If there's a multiplier, we'll also multiply the number of spaces
+    // but we 1 as we've already gotten the reward for these while playing
+    reward += this.puzzle.numberOfSpaces
+      * (perfectGameMultiplier - 1) * this.getGoldPerDestroyedCube();
+
+    this.setGold(this.gold + reward);
   }
 
   setGold(gold) {
