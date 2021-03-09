@@ -30,6 +30,14 @@ export default class PuzzleComponent {
         state,
       };
     })));
+    this.numberOfSolids = this.calculateNumberOfSolids();
+  }
+
+  calculateNumberOfSolids() {
+    return this.cubes
+      .reduce((s1, face) => s1 + face
+        .reduce((s2, line) => s2 + line
+          .reduce((s3, cube) => s3 + (cube.state === 'part' ? 1 : 0), 0), 0), 0);
   }
 
   removeClues() {
@@ -61,10 +69,10 @@ export default class PuzzleComponent {
       // return added + removed ** 2;
       // // Special case
       if (changes.length === 1 && lineWithoutZeroes.length === 1) {
-        // return 2;
+        return 2;
       }
-      // return changes.length / lineWithoutZeroes.length;
-      return changes.length;
+      return changes.length / lineWithoutZeroes.length;
+      // return changes.length;
     });
     clues = clues.map((c, i) => ({ ...c, score: scores[i] }));
 

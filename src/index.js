@@ -4,6 +4,8 @@ import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
 import RenderComponent from './components/render';
 import PuzzleComponent from './components/puzzle';
+import GameComponent from './components/game';
+import DomComponent from './components/dom';
 
 const cubeSize = 1;
 let isPuzzleComplete = false;
@@ -14,6 +16,8 @@ let inputComponent;
 let physicsComponent;
 let renderComponent;
 let puzzleComponent;
+let gameComponent;
+let domComponent;
 
 const animate = () => {
   requestAnimationFrame(animate);
@@ -26,6 +30,7 @@ const animate = () => {
   renderer.render(scene, camera);
 };
 
+// todo move this entire function to render and let render subscribe to input observable
 const onMove = (mouse) => {
   const newIntersectedCube = physicsComponent.getIntersectedObject(mouse);
 
@@ -66,9 +71,11 @@ const onMouseClick = (mouse) => {
         if (mouse.button === 'left') {
           puzzleComponent.destroyCube(clickedCubeMesh.cube);
           renderComponent.destroyCube(clickedCubeMesh);
+          gameComponent.onDestroyedCube();
 
           if (puzzleComponent.isSolved()) {
             console.log('good job');
+            gameComponent.onPuzzleComplete();
             isPuzzleComplete = true;
           }
         } else if (mouse.button === 'right') {
@@ -109,6 +116,11 @@ const initComponents = () => {
   renderComponent.createPuzzleMesh(puzzleComponent);
   inputComponent = new InputComponent();
   physicsComponent = new PhysicsComponent(renderComponent.pivot);
+  gameComponent = new GameComponent(puzzleComponent);
+  domComponent = new DomComponent(gameComponent.getObservable());
+  gameComponent.setDomObservable(domComponent.observable);
+
+  domComponent.addUpgradesUI(gameComponent.upgrades);
 
   inputComponent.getObservable().subscribe(({ type, mouse }) => {
     switch (type) {
