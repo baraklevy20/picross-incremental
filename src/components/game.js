@@ -10,7 +10,7 @@ export default class GameComponent {
     this.upgrades = {
       'max-cubes': {
         name: 'max-cubes',
-        label: 'Max number of cubes',
+        label: 'Number of cubes',
         baseCost: 5, // todo change
         baseValue: 25,
         level: 0,
@@ -60,6 +60,7 @@ export default class GameComponent {
     };
 
     this.calculateUpgradesValues();
+    this.gameStartTime = performance.now();
   }
 
   buyUpgrade(upgradeName) {
@@ -100,14 +101,14 @@ export default class GameComponent {
 
   onPuzzleComplete() {
     let reward = this.puzzle.numberOfSolids * this.getGoldPerDestroyedCube();
-    const time = false;
-    const noMistakes = this.puzzle.brokenSolids === 0;
+    const timeBonus = performance.now() - this.gameStartTime < 30000;
+    const noMistakesBonus = this.puzzle.brokenSolids === 0;
     let perfectGameMultiplier = 1;
-    if (time) {
+    if (timeBonus) {
       perfectGameMultiplier *= 1.5;
     }
 
-    if (noMistakes) {
+    if (noMistakesBonus) {
       perfectGameMultiplier *= 1.5;
     }
 
@@ -122,14 +123,16 @@ export default class GameComponent {
   }
 
   setGold(gold) {
-    if (this.gold === gold) {
+    const roundedGold = Math.ceil(gold);
+
+    if (this.gold === roundedGold) {
       return;
     }
 
-    this.gold = gold;
+    this.gold = roundedGold;
     this.observable.next({
       type: 'gold_changed',
-      gold: this.gold,
+      gold: roundedGold,
     });
   }
 

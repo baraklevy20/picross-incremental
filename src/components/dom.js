@@ -54,4 +54,17 @@ export default class DomComponent {
   static onGoldChanged(gold) {
     document.getElementById('goldValue').innerText = gold;
   }
+
+  static updateGameTime(startTime) {
+    const timeLeft = Math.floor((30000 - (performance.now() - startTime)) / 1000);
+    const timeValueElement = document.getElementById('timeValue');
+    const timeElement = document.getElementById('time');
+
+    if (timeLeft >= 0) {
+      timeValueElement.innerText = timeLeft;
+    } else {
+      timeElement.style.color = 'red';
+      timeElement.innerText = 'No time bonus';
+    }
+  }
 }

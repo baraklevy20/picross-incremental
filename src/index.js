@@ -25,6 +25,8 @@ const animate = () => {
 
   if (isPuzzleComplete) {
     renderComponent.pivot.rotation.y += 0.03;
+  } else {
+    DomComponent.updateGameTime(gameComponent.gameStartTime);
   }
 
   renderer.render(scene, camera);
