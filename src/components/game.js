@@ -5,8 +5,6 @@ export default class GameComponent {
     this.puzzle = puzzle;
     this.observable = new Subject();
     this.setGold(10);
-    this.setWidth(5);
-    this.setHeight(5);
 
     this.upgrades = {
       'puzzle-width': {
