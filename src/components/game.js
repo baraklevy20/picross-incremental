@@ -5,15 +5,26 @@ export default class GameComponent {
     this.puzzle = puzzle;
     this.observable = new Subject();
     this.setGold(10);
-    // this.setNumberOfCubes(25);
+    this.setWidth(5);
+    this.setHeight(5);
 
     this.upgrades = {
-      'max-cubes': {
-        name: 'max-cubes',
-        label: 'Number of cubes',
-        baseCost: 5, // todo change
-        baseValue: 25,
+      'puzzle-width': {
+        name: 'puzzle-width',
+        label: 'Puzzle width',
+        baseCost: 1500,
+        baseValue: 5,
         level: 0,
+        costExp: 12.5,
+        nextValueFormula: (value) => value + 1,
+      },
+      'puzzle-height': {
+        name: 'puzzle-height',
+        label: 'Puzzle height',
+        baseCost: 3750,
+        baseValue: 5,
+        level: 0,
+        costExp: 12,
         nextValueFormula: (value) => value + 1,
       },
       'gold-per-cube': {
@@ -22,7 +33,8 @@ export default class GameComponent {
         baseCost: 5,
         baseValue: 1,
         level: 0,
-        nextValueFormula: (value) => value + 1,
+        costExp: 1.15,
+        nextValueFormula: (value) => Math.ceil(value * 1.05),
       },
       // {
       //   name: 'win-condition-multiplier',
@@ -61,19 +73,28 @@ export default class GameComponent {
 
     this.calculateUpgradesValues();
     this.gameStartTime = performance.now();
+    this.completions = 0;
   }
 
   buyUpgrade(upgradeName) {
     const upgrade = this.upgrades[upgradeName];
-    // if (upgrade.cost <= this.gold) {
-    this.setGold(this.gold - upgrade.cost);
-    upgrade.level += 1;
-    GameComponent.calculateUpgradeValues(upgrade);
-    this.observable.next({
-      type: 'upgrade_levelup',
-      upgrade,
-    });
-    // }
+    if (upgrade.cost <= this.gold) {
+      this.setGold(this.gold - upgrade.cost);
+      upgrade.level += 1;
+      GameComponent.calculateUpgradeValues(upgrade);
+      this.observable.next({
+        type: 'upgrade_levelup',
+        upgrade,
+      });
+    }
+  }
+
+  getWidth() {
+    return this.upgrades['puzzle-width'].currentValue;
+  }
+
+  getHeight() {
+    return this.upgrades['puzzle-height'].currentValue;
   }
 
   calculateUpgradesValues() {
@@ -83,7 +104,7 @@ export default class GameComponent {
   }
 
   static calculateUpgradeValues(upgrade) {
-    upgrade.cost = Math.ceil(upgrade.baseCost * (1.15 ** upgrade.level));
+    upgrade.cost = Math.ceil(upgrade.baseCost * (upgrade.costExp ** upgrade.level));
     upgrade.currentValue = upgrade.nextValue || upgrade.baseValue;
     upgrade.nextValue = upgrade.nextValueFormula(upgrade.currentValue);
   }
@@ -100,6 +121,8 @@ export default class GameComponent {
   }
 
   onPuzzleComplete() {
+    this.completions += 1;
+    console.log(this.completions);
     let reward = this.puzzle.numberOfSolids * this.getGoldPerDestroyedCube();
     const timeBonus = performance.now() - this.gameStartTime < 30000;
     const noMistakesBonus = this.puzzle.brokenSolids === 0;
@@ -119,6 +142,8 @@ export default class GameComponent {
     reward += this.puzzle.numberOfSpaces
       * (perfectGameMultiplier - 1) * this.getGoldPerDestroyedCube();
 
+    const puzzleSize = this.getWidth() * this.getHeight();
+    reward *= (3 * puzzleSize - 50) / 25; // 25 -> x1, 100 -> x10, 1000 -> x188
     this.setGold(this.gold + reward);
   }
 
