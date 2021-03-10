@@ -1,32 +1,34 @@
 /* eslint-disable no-dupe-class-members */
 /* eslint-disable no-param-reassign */
 /* eslint-disable class-methods-use-this */
+import { get, set } from 'lodash';
+
 export default class PuzzleComponent {
-  constructor() {
-    this.generatePuzzle(5, 5, 1);
+  constructor(voxFile) {
+    this.generatePuzzle(voxFile, 5, 5, 1);
   }
 
-  generatePuzzle(width, height, depth) {
-    // eslint-disable-next-line max-len
-    this.cubes = [48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    this.cubes[2 * 100 + 0 * 10 + 0] = 48;
-    this.brokenSolids = 0;
+  voxFileToPuzzle(voxFile) {
+    this.cubes = [];
+    voxFile.xyzi.values.forEach((xyzi) => {
+      set(this.cubes, `[${xyzi.x}][${xyzi.y}][${xyzi.z}]`, 0x30);
+    });
 
-    // todo eventually remove it. the puzzle generator code would do it.
-    const array = [];
-    let k = 0;
-    for (let x = 0; x < 10; x += 1) {
-      array[x] = [];
-      for (let y = 0; y < 10; y += 1) {
-        array[x][y] = [];
-        for (let z = 0; z < 10; z += 1) {
-          array[x][y][z] = this.cubes[k];
-          k += 1;
+    // Fill the rest of the cells with empty
+    for (let x = 0; x < voxFile.size.x; x += 1) {
+      for (let y = 0; y < voxFile.size.y; y += 1) {
+        for (let z = 0; z < voxFile.size.z; z += 1) {
+          if (!get(this.cubes, `[${x}][${y}][${z}]`)) {
+            set(this.cubes, `[${x}][${y}][${z}]`, 0x20);
+          }
         }
       }
     }
-    this.cubes = array;
+  }
 
+  generatePuzzle(voxFile, width, height, depth) {
+    this.voxFileToPuzzle(voxFile);
+    this.brokenSolids = 0;
     this.clues = this.generateClues();
     this.removeClues();
     this.cubes = this.cubes.map((face) => face.map((line) => line.map((cube) => {
@@ -103,15 +105,6 @@ export default class PuzzleComponent {
     clues = clues.map((c, i) => ({ ...c, score: scores[i] }));
 
     clues.sort((a, b) => b.score - a.score);
-
-    // todo instead of shuffle, sort clues by best to worse (best = solves entire line)
-    // // Shuffle clues
-    // for (let i = clues.length - 1; i > 0; i -= 1) {
-    //   const j = Math.floor(Math.random() * (i + 1));
-    //   const temp = clues[i];
-    //   clues[i] = clues[j];
-    //   clues[j] = temp;
-    // }
 
     // Try to remove clues one by one until the puzzle isn't solvable
     for (let i = 0; i < clues.length; i += 1) {
@@ -215,27 +208,27 @@ export default class PuzzleComponent {
       z: [],
     };
 
-    for (let y = 0; y < 10; y += 1) {
+    for (let y = 0; y < this.cubes[0].length; y += 1) {
       lines.x[y] = [];
-      for (let z = 0; z < 10; z += 1) {
+      for (let z = 0; z < this.cubes[0][0].length; z += 1) {
         lines.x[y][z] = this.cubes
           .map((face) => face[y][z])
           .map((cube) => (cube >= 0x30 && cube < 0x40 ? 0x20 : cube));
       }
     }
 
-    for (let x = 0; x < 10; x += 1) {
+    for (let x = 0; x < this.cubes.length; x += 1) {
       lines.y[x] = [];
-      for (let z = 0; z < 10; z += 1) {
+      for (let z = 0; z < this.cubes[0][0].length; z += 1) {
         lines.y[x][z] = this.cubes[x]
           .map((line) => line[z])
           .map((cube) => (cube >= 0x30 && cube < 0x40 ? 0x20 : cube));
       }
     }
 
-    for (let x = 0; x < 10; x += 1) {
+    for (let x = 0; x < this.cubes.length; x += 1) {
       lines.z[x] = [];
-      for (let y = 0; y < 10; y += 1) {
+      for (let y = 0; y < this.cubes[0].length; y += 1) {
         lines.z[x][y] = this.cubes[x][y]
           .map((cube) => (cube >= 0x30 && cube < 0x40 ? 0x20 : cube));
       }
@@ -257,21 +250,23 @@ export default class PuzzleComponent {
       z: [],
     };
 
-    // todo replace 10 here with something
-    for (let y = 0; y < 10; y += 1) {
+    // todo remove eventually?
+    const maxClues = 20;
+
+    for (let y = 0; y < Math.min(maxClues, this.cubes[0].length); y += 1) {
       clues.x[y] = [];
-      for (let z = 0; z < 10; z += 1) {
+      for (let z = 0; z < Math.min(maxClues, this.cubes[0][0].length); z += 1) {
         const clue = this.generateLineClue(null, y, z, 0);
 
         if (clue) {
-          clues.x[y][z] = clue;
+          clues.x[y][z] = this.generateLineClue(null, y, z, 0);
         }
       }
     }
 
-    for (let x = 0; x < 10; x += 1) {
+    for (let x = 0; x < Math.min(maxClues, this.cubes.length); x += 1) {
       clues.y[x] = [];
-      for (let z = 0; z < 10; z += 1) {
+      for (let z = 0; z < Math.min(maxClues, this.cubes[0][0].length); z += 1) {
         const clue = this.generateLineClue(x, null, z, 1);
 
         if (clue) {
@@ -280,11 +275,10 @@ export default class PuzzleComponent {
       }
     }
 
-    for (let x = 0; x < 10; x += 1) {
+    for (let x = 0; x < Math.min(maxClues, this.cubes.length); x += 1) {
       clues.z[x] = [];
-      for (let y = 0; y < 10; y += 1) {
+      for (let y = 0; y < Math.min(maxClues, this.cubes[0].length); y += 1) {
         const clue = this.generateLineClue(x, y, null, 2);
-
         if (clue) {
           clues.z[x][y] = clue;
         }
@@ -299,7 +293,13 @@ export default class PuzzleComponent {
     let count = 0;
     let spaces = 0;
 
-    for (let i = 0; i < 10; i += 1) {
+    const axisDim = axis === 0
+      ? this.cubes.length
+      : (axis === 1
+        ? this.cubes[0].length
+        : this.cubes[0][0].length);
+
+    for (let i = 0; i < axisDim; i += 1) {
       const cube = axis === 0
         ? this.cubes[i][y0][z0]
         : (axis === 1
@@ -316,14 +316,14 @@ export default class PuzzleComponent {
       previous = cube;
     }
 
-    // If the entire line is 0, return null
-    if (count === 0) {
-      return null;
+    // If we finished with a space, remove the last space
+    if (count !== 0 && previous < 0x30) {
+      spaces -= 1;
     }
 
-    // If we finished with a space, remove the last space
-    if (previous < 0x30) {
-      spaces -= 1;
+    // Ignore clues that are going to take too long to compute
+    if (count > 15 && spaces >= 2) {
+      return null;
     }
 
     return {
@@ -403,12 +403,18 @@ export default class PuzzleComponent {
       return [];
     }
 
+    if (clue.count === 0) {
+      return line
+        .map((v, i) => (v === 0x40 ? null : { index: i, value: 0x40 }))
+        .filter((c) => c !== null);
+    }
+
     const changes = [];
     const blocks = this.getAllPossibleBlockCombinations(clue);
-
     const allPossibleSolutions = blocks
       .map((b) => this.solveLineWithBlocks(line, b))
       .filter((s) => !!s);
+
     for (let i = 0; i < line.length; i += 1) {
       if (this.areAllCellsSame(allPossibleSolutions, i)
         && line[i] !== allPossibleSolutions[0][i]) {
@@ -484,6 +490,11 @@ export default class PuzzleComponent {
           // Get rightmost block to the left of this unassigned solid
           let j = this.getRightmostBlockToTheLeftOfPosition(positions, i) + 1;
 
+          // If there isn't any block to the left to fit this unassigned solid
+          if (j === 0) {
+            return null;
+          }
+
           do {
             j -= 1;
             // Move it to overlap with the unassigned solid
@@ -500,7 +511,12 @@ export default class PuzzleComponent {
 
           // If we get here, we managed to place the current block in the unassigned solid
           // we now reposition blocks on the right
-          const partialSolution = this.getSimpleLeftmostSolution(line, blocks, i + 2, j + 1);
+          const partialSolution = this.getSimpleLeftmostSolution(
+            line,
+            blocks,
+            positions[j] + blocks[j] + 1,
+            j + 1,
+          );
 
           if (!partialSolution) {
             return null;
@@ -577,10 +593,14 @@ export default class PuzzleComponent {
       }
     }
 
-    // Finally, we can place it here if the next cell is non-solid (empty, space or end of line)
-    return block + position === line.length
+    // Finally, we can place it here if the next
+    // and previous cells are non-solid (empty, space or end of line)
+    return (block + position === line.length
       || line[block + position] < 0x30
-      || line[block + position] >= 0x40;
+      || line[block + position] >= 0x40)
+      && (position === 0
+      || line[position - 1] < 0x30
+      || line[position - 1] >= 0x40);
   }
 
   onBrokenSolid() {

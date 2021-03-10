@@ -7,6 +7,8 @@ import PuzzleComponent from './components/puzzle';
 import GameComponent from './components/game';
 import DomComponent from './components/dom';
 
+const voxFile = require('../models/#cat_01.vox');
+
 const cubeSize = 1;
 let isPuzzleComplete = false;
 
@@ -127,7 +129,7 @@ const onMouseClick = (mouse) => {
 };
 
 const initComponents = () => {
-  puzzleComponent = new PuzzleComponent();
+  puzzleComponent = new PuzzleComponent(voxFile);
   renderComponent = new RenderComponent(cubeSize);
   renderComponent.createPuzzleMesh(puzzleComponent);
   inputComponent = new InputComponent();

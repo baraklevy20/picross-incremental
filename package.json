@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "jquery": "^3.6.0",
+    "lodash": "^4.17.21",
     "rxjs": "^6.6.6",
     "three": "^0.126.0",
     "vox-reader": "^2.0.3"
