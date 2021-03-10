@@ -60,6 +60,18 @@ const onMove = (mouse) => {
   }
 };
 
+const moveToNextPuzzle = () => {
+  isPuzzleComplete = false;
+  puzzleComponent.generatePuzzle(
+    gameComponent.getWidth(),
+    gameComponent.getHeight(),
+    gameComponent.getDepth(),
+  );
+  gameComponent.nextPuzzle();
+  renderComponent.generatePuzzleMesh();
+  physicsComponent.pivot = renderComponent.pivot;
+};
+
 const onMouseClick = (mouse) => {
   if (isPuzzleComplete) {
     return;
@@ -79,6 +91,7 @@ const onMouseClick = (mouse) => {
             console.log('good job');
             gameComponent.onPuzzleComplete();
             isPuzzleComplete = true;
+            setTimeout(moveToNextPuzzle, gameComponent.getWinningAnimationTime());
           }
         } else if (mouse.button === 'right') {
           clickedCubeMesh.cube.state = 'paintedEmpty';
@@ -163,7 +176,6 @@ const init = () => {
   initComponents();
   initOrbitControl();
   initCamera();
-  scene.add(renderComponent.pivot);
 };
 
 const main = () => {

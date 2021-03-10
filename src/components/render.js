@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import '../../styles.css';
+import { scene } from '../context';
 
 export default class RenderComponent {
   constructor(cubeSize) {
@@ -104,7 +105,7 @@ export default class RenderComponent {
     materials[4] = zFace;
     materials[5] = zFace;
 
-    return new THREE.Mesh(this.geometry, materials);
+    return new THREE.Mesh(this.geometry.clone(), materials);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -203,8 +204,23 @@ export default class RenderComponent {
   }
 
   createPuzzleMesh(puzzleComponent) {
+    this.puzzleComponent = puzzleComponent;
+    this.generatePuzzleMesh();
+  }
+
+  destroyPreviousPuzzleMesh() {
+    if (this.pivot) {
+      this.pivot.children[0].children.forEach((cube) => {
+        this.destroyCube(cube);
+      });
+      scene.remove(this.pivot);
+    }
+  }
+
+  generatePuzzleMesh() {
+    this.destroyPreviousPuzzleMesh();
     const pivot = new THREE.Group();
-    const centerPoint = this.getPuzzleCenter(puzzleComponent.cubes);
+    const centerPoint = this.getPuzzleCenter(this.puzzleComponent.cubes);
     const cubesMesh = new THREE.Object3D();
     cubesMesh.position.set(
       -centerPoint[0] * this.cubeSize,
@@ -213,14 +229,14 @@ export default class RenderComponent {
     );
     pivot.add(cubesMesh);
 
-    puzzleComponent.cubes.forEach((face, x) => {
+    this.puzzleComponent.cubes.forEach((face, x) => {
       face.forEach((line, y) => {
         line.forEach((cube, z) => {
           if (cube.state === 'part' || cube.state === 'empty') {
             const mesh = this.createCube([x, y, z], cube.state, {
-              x: puzzleComponent.clues.x?.[y]?.[z],
-              y: puzzleComponent.clues.y?.[x]?.[z],
-              z: puzzleComponent.clues.z?.[x]?.[y],
+              x: this.puzzleComponent.clues.x?.[y]?.[z],
+              y: this.puzzleComponent.clues.y?.[x]?.[z],
+              z: this.puzzleComponent.clues.z?.[x]?.[y],
             });
             mesh.cube = cube;
             cubesMesh.add(mesh);
@@ -232,5 +248,6 @@ export default class RenderComponent {
     this.pivot = pivot;
     this.pivot.rotation.x += 0.1;
     this.pivot.rotation.y += 0.5;
+    scene.add(this.pivot);
   }
 }

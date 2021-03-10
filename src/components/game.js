@@ -70,8 +70,13 @@ export default class GameComponent {
     };
 
     this.calculateUpgradesValues();
-    this.gameStartTime = performance.now();
+    this.initGame();
+
     this.completions = 0;
+  }
+
+  initGame() {
+    this.gameStartTime = performance.now();
   }
 
   buyUpgrade(upgradeName) {
@@ -93,6 +98,10 @@ export default class GameComponent {
 
   getHeight() {
     return this.upgrades['puzzle-height'].currentValue;
+  }
+
+  getDepth() {
+    return 1;
   }
 
   calculateUpgradesValues() {
@@ -163,6 +172,11 @@ export default class GameComponent {
     return this.upgrades['gold-per-cube'].currentValue;
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  getWinningAnimationTime() {
+    return 4000; // todo change with upgrade
+  }
+
   getObservable() {
     return this.observable;
   }
@@ -176,5 +190,10 @@ export default class GameComponent {
         default:
       }
     });
+  }
+
+  // todo might be exactly the same as initGame
+  nextPuzzle() {
+    this.initGame();
   }
 }
