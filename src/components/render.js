@@ -15,6 +15,7 @@ export default class RenderComponent {
     this.emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
     this.selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
     this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
+    this.cache = {};
   }
 
   createCube(cubePosition, state, clue) {
@@ -43,9 +44,14 @@ export default class RenderComponent {
 
   createFaceMaterial(faceClue, state) {
     if (faceClue === undefined) {
-      const emptyMaterial = new THREE.MeshBasicMaterial();
+      const emptyMaterial = this.emptyMaterial.clone();
       emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
       return emptyMaterial;
+    }
+
+    const cacheValue = this.cache[`${state}-${faceClue.spaces > 1 ? 2 : faceClue.spaces}-${faceClue.count}`];
+    if (cacheValue) {
+      return cacheValue;
     }
 
     const canvas = document.createElement('canvas');
@@ -55,7 +61,7 @@ export default class RenderComponent {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = `${canvas.width * 3 / 4}px CrashNumberingGothic`;
+    ctx.font = `${(canvas.width * 3) / 4}px CrashNumberingGothic`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'black';
@@ -87,6 +93,7 @@ export default class RenderComponent {
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
     textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
+    this.cache[`${state}-${faceClue.spaces > 1 ? 2 : faceClue.spaces}-${faceClue.count}`] = textMaterial;
     return textMaterial;
   }
 
@@ -98,14 +105,14 @@ export default class RenderComponent {
     const zFace = this.createFaceMaterial(z, state);
 
     const materials = [];
-    materials[0] = xFace;
-    materials[1] = xFace;
-    materials[2] = yFace;
-    materials[3] = yFace;
-    materials[4] = zFace;
-    materials[5] = zFace;
+    materials[0] = xFace.clone();
+    materials[1] = xFace.clone();
+    materials[2] = yFace.clone();
+    materials[3] = yFace.clone();
+    materials[4] = zFace.clone();
+    materials[5] = zFace.clone();
 
-    return new THREE.Mesh(this.geometry.clone(), materials);
+    return new THREE.Mesh(this.geometry, materials);
   }
 
   // eslint-disable-next-line class-methods-use-this
