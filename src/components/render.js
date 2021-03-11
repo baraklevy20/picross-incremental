@@ -77,9 +77,7 @@ export default class RenderComponent {
 
   createCube(geometry, cubePosition, state, clue) {
     const group = new THREE.Group();
-    const material = clue && (clue.x || clue.y || clue.z)
-      ? this.createTextMaterial(clue, state)
-      : (state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
+    const material = this.createTextMaterial(clue, state);
 
     const cube = new THREE.Mesh(geometry, material);
     cube.position.set(

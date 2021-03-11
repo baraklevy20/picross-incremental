@@ -9,6 +9,7 @@ import GameComponent from './components/game';
 import DomComponent from './components/dom';
 
 const voxFile = require('../models/#cat_01.vox');
+// const voxFile = require('../models/cart.vox');
 
 const cubeSize = 1;
 let isPuzzleComplete = false;
