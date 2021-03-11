@@ -1,4 +1,5 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import Stats from 'stats.js';
 import { renderer, scene, camera } from './context';
 import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
@@ -21,9 +22,14 @@ let puzzleComponent;
 let gameComponent;
 let domComponent;
 
+const stats = new Stats();
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
+
 const animate = () => {
-  requestAnimationFrame(animate);
+  stats.begin();
   controls.update();
+  console.log(`render calls: ${renderer.info.render.calls}`);
 
   if (isPuzzleComplete) {
     renderComponent.pivot.rotation.y += 0.03;
@@ -32,6 +38,8 @@ const animate = () => {
   }
 
   renderer.render(scene, camera);
+  stats.end();
+  requestAnimationFrame(animate);
 };
 
 // todo move this entire function to render and let render subscribe to input observable
@@ -158,6 +166,12 @@ const initRenderer = () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
   document.body.appendChild(renderer.domElement);
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    controls.handleResize();
+  });
 };
 
 const initOrbitControl = () => {
