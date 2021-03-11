@@ -76,6 +76,15 @@ export default class PuzzleComponent {
   removeClues() {
     const lines = this.getLinesWithoutSolid();
     let clues = [...this.clues.x, ...this.clues.y, ...this.clues.z].flat(2);
+
+    // Shuffle clues. Otherwise only z clues remain
+    for (let i = clues.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = clues[i];
+      clues[i] = clues[j];
+      clues[j] = temp;
+    }
+
     const scores = clues.map((clue) => {
       let axis;
       let first;
