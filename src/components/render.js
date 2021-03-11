@@ -15,7 +15,6 @@ export default class RenderComponent {
     this.material = new THREE.MeshBasicMaterial({ color: this.cubeColor });
     this.emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
     this.selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
-    this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
     this.cache = {};
     this.meshes = [];
     this.faces = [
@@ -89,16 +88,7 @@ export default class RenderComponent {
       cubePosition[2] * this.cubeSize,
     );
 
-    const outline = new THREE.Mesh(this.geometry, this.outlineMaterial.clone());
-    outline.position.set(
-      cubePosition[0] * this.cubeSize,
-      cubePosition[1] * this.cubeSize,
-      cubePosition[2] * this.cubeSize,
-    );
-    outline.scale.multiplyScalar(1.05);
-
     group.add(cube);
-    // group.add(outline);
     return group;
   }
 
@@ -113,30 +103,31 @@ export default class RenderComponent {
     }
 
     const canvas = document.createElement('canvas');
-    const padding = 60;
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 64;
+    canvas.height = 64;
+    const padding = canvas.width / 8;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Outline
-    const outlinePadding = 0;
-    ctx.lineWidth = 10;
+    ctx.lineWidth = canvas.width / 50;
+    ctx.strokeStyle = '#bebebe';
     ctx.beginPath();
     ctx.rect(
-      outlinePadding,
-      outlinePadding,
-      canvas.width - 2 * outlinePadding,
-      canvas.height - 2 * outlinePadding,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
     );
     ctx.stroke();
 
     if (clue) {
-      ctx.lineWidth = 20;
+      ctx.lineWidth = canvas.width / 25;
       ctx.font = `${clue.count >= 10 ? (canvas.width * 3) / 5 : (canvas.width * 3) / 4}px CrashNumberingGothic`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.strokeStyle = 'black';
       ctx.fillStyle = 'black';
       if (clue.spaces > 0) {
         ctx.beginPath();
