@@ -31,9 +31,14 @@ export default class PuzzleComponent {
     this.brokenSolids = 0;
     this.clues = this.generateClues();
     this.removeClues();
-    this.cubes = this.cubes.map((face) => face.map((line) => line.map((cube) => {
+    this.cubes = this.cubes.map((face, x) => face.map((line, y) => line.map((cube, z) => {
       const state = cube >= 0x30 ? 'part' : (cube >= 0x20 ? 'empty' : 'nothing');
       return {
+        position: {
+          x,
+          y,
+          z,
+        },
         state,
       };
     })));

@@ -1,3 +1,4 @@
+import { get, set } from 'lodash';
 import * as THREE from 'three';
 import '../../styles.css';
 import { scene } from '../context';
@@ -16,13 +17,72 @@ export default class RenderComponent {
     this.selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
     this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xbebebe, side: THREE.BackSide });
     this.cache = {};
+    this.meshes = [];
+    this.faces = [
+      { // right
+        dir: [1, 0, 0],
+        corners: [
+          { pos: [0.5, 0.5, 0.5], uv: [0, 1] },
+          { pos: [0.5, 0.5, -0.5], uv: [1, 1] },
+          { pos: [0.5, -0.5, 0.5], uv: [0, 0] },
+          { pos: [0.5, -0.5, -0.5], uv: [1, 0] },
+        ],
+      },
+      { // left
+        dir: [-1, 0, 0],
+        corners: [
+          { pos: [-0.5, 0.5, -0.5], uv: [0, 1] },
+          { pos: [-0.5, 0.5, 0.5], uv: [1, 1] },
+          { pos: [-0.5, -0.5, -0.5], uv: [0, 0] },
+          { pos: [-0.5, -0.5, 0.5], uv: [1, 0] },
+        ],
+      },
+      { // top
+        dir: [0, 1, 0],
+        corners: [
+          { pos: [-0.5, 0.5, -0.5], uv: [0, 1] },
+          { pos: [0.5, 0.5, -0.5], uv: [1, 1] },
+          { pos: [-0.5, 0.5, 0.5], uv: [0, 0] },
+          { pos: [0.5, 0.5, 0.5], uv: [1, 0] },
+        ],
+      },
+      { // bottom
+        dir: [0, -1, 0],
+        corners: [
+          { pos: [-0.5, -0.5, 0.5], uv: [0, 1] },
+          { pos: [0.5, -0.5, 0.5], uv: [1, 1] },
+          { pos: [-0.5, -0.5, -0.5], uv: [0, 0] },
+          { pos: [0.5, -0.5, -0.5], uv: [1, 0] },
+        ],
+      },
+      { // front
+        dir: [0, 0, 1],
+        corners: [
+          { pos: [-0.5, 0.5, 0.5], uv: [0, 1] },
+          { pos: [0.5, 0.5, 0.5], uv: [1, 1] },
+          { pos: [-0.5, -0.5, 0.5], uv: [0, 0] },
+          { pos: [0.5, -0.5, 0.5], uv: [1, 0] },
+        ],
+      },
+      { // back
+        dir: [0, 0, -1],
+        corners: [
+          { pos: [0.5, 0.5, -0.5], uv: [0, 1] },
+          { pos: [-0.5, 0.5, -0.5], uv: [1, 1] },
+          { pos: [0.5, -0.5, -0.5], uv: [0, 0] },
+          { pos: [-0.5, -0.5, -0.5], uv: [1, 0] },
+        ],
+      },
+    ];
   }
 
-  createCube(cubePosition, state, clue) {
+  createCube(geometry, cubePosition, state, clue) {
     const group = new THREE.Group();
-    const cube = clue && (clue.x || clue.y || clue.z)
-      ? this.createTextMesh(clue, state)
-      : new THREE.Mesh(this.geometry, state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
+    const material = clue && (clue.x || clue.y || clue.z)
+      ? this.createTextMaterial(clue, state)
+      : (state === 'empty' ? this.emptyMaterial.clone() : this.material.clone());
+
+    const cube = new THREE.Mesh(geometry, material);
     cube.position.set(
       cubePosition[0] * this.cubeSize,
       cubePosition[1] * this.cubeSize,
@@ -38,18 +98,16 @@ export default class RenderComponent {
     outline.scale.multiplyScalar(1.05);
 
     group.add(cube);
-    group.add(outline);
+    // group.add(outline);
     return group;
   }
 
-  createFaceMaterial(faceClue, state) {
-    if (faceClue === undefined) {
-      const emptyMaterial = this.emptyMaterial.clone();
-      emptyMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
-      return emptyMaterial;
-    }
+  createFaceMaterial(clue, state) {
+    const cacheKey = clue
+      ? `${state}-${clue.spaces > 1 ? 2 : clue.spaces}-${clue.count}`
+      : 'empty';
 
-    const cacheValue = this.cache[`${state}-${faceClue.spaces > 1 ? 2 : faceClue.spaces}-${faceClue.count}`];
+    const cacheValue = this.cache[cacheKey];
     if (cacheValue) {
       return cacheValue;
     }
@@ -61,43 +119,58 @@ export default class RenderComponent {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = `${(canvas.width * 3) / 4}px CrashNumberingGothic`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'black';
-    ctx.lineWidth = 20;
 
-    if (faceClue.spaces > 0) {
-      ctx.beginPath();
+    // Outline
+    const outlinePadding = 0;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.rect(
+      outlinePadding,
+      outlinePadding,
+      canvas.width - 2 * outlinePadding,
+      canvas.height - 2 * outlinePadding,
+    );
+    ctx.stroke();
 
-      if (faceClue.spaces === 1) {
-        ctx.arc(
-          canvas.width / 2,
-          canvas.height / 2,
-          (canvas.width - 2 * padding) / 2,
-          0,
-          2 * Math.PI,
-        );
-      } else if (faceClue.spaces > 1) {
-        ctx.rect(
-          padding,
-          padding,
-          canvas.width - 2 * padding,
-          canvas.height - 2 * padding,
-        );
+    if (clue) {
+      ctx.lineWidth = 20;
+      ctx.font = `${clue.count >= 10 ? (canvas.width * 3) / 5 : (canvas.width * 3) / 4}px CrashNumberingGothic`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'black';
+      if (clue.spaces > 0) {
+        ctx.beginPath();
+
+        if (clue.spaces === 1) {
+          ctx.arc(
+            canvas.width / 2,
+            canvas.height / 2,
+            (canvas.width - 2 * padding) / 2,
+            0,
+            2 * Math.PI,
+          );
+        } else if (clue.spaces > 1) {
+          ctx.rect(
+            padding,
+            padding,
+            canvas.width - 2 * padding,
+            canvas.height - 2 * padding,
+          );
+        }
+
+        ctx.stroke();
       }
 
-      ctx.stroke();
+      ctx.fillText(clue.count, canvas.width / 2, canvas.height / 2);
     }
-    ctx.fillText(faceClue.count, canvas.width / 2, canvas.height / 2);
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
     textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
-    this.cache[`${state}-${faceClue.spaces > 1 ? 2 : faceClue.spaces}-${faceClue.count}`] = textMaterial;
+    this.cache[cacheKey] = textMaterial;
     return textMaterial;
   }
 
-  createTextMesh({
+  createTextMaterial({
     x, y, z,
   }, state) {
     const xFace = this.createFaceMaterial(x, state);
@@ -112,7 +185,7 @@ export default class RenderComponent {
     materials[4] = zFace.clone();
     materials[5] = zFace.clone();
 
-    return new THREE.Mesh(this.geometry, materials);
+    return materials;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -180,6 +253,36 @@ export default class RenderComponent {
 
     this.pivot.children[0].remove(cube);
     cube.children.forEach((c) => c.geometry.dispose());
+
+    // Change geometry of near-by cubes to now show their faces
+    for (let dx = -1; dx <= 1; dx += 1) {
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dz = -1; dz <= 1; dz += 1) {
+          if (dx === 0 && dy === 0 && dz === 0) {
+            continue;
+          }
+
+          const x = cube.cube.position.x + dx;
+          const y = cube.cube.position.y + dy;
+          const z = cube.cube.position.z + dz;
+
+          if (!(get(this.puzzleComponent.cubes, `[${x}][${y}][${z}]`))) {
+            continue;
+          }
+
+          // todo duplicated code. refactor into a function
+          const directions = [];
+          this.faces.forEach(({ dir }, i) => {
+            const neighbor = get(this.puzzleComponent.cubes, `[${x + dir[0]}][${y + dir[1]}][${z + dir[2]}]`);
+            if (!neighbor || neighbor.state === 'nothing') {
+              directions.push(i);
+            }
+          });
+          const geometry = this.getCubeGeometry(directions);
+          this.meshes[x][y][z].children[0].geometry = geometry;
+        }
+      }
+    }
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -240,12 +343,21 @@ export default class RenderComponent {
       face.forEach((line, y) => {
         line.forEach((cube, z) => {
           if (cube.state === 'part' || cube.state === 'empty') {
-            const mesh = this.createCube([x, y, z], cube.state, {
+            const directions = [];
+            this.faces.forEach(({ dir }, i) => {
+              const neighbor = get(this.puzzleComponent.cubes, `[${x + dir[0]}][${y + dir[1]}][${z + dir[2]}]`);
+              if (!neighbor || neighbor.state === 'nothing') {
+                directions.push(i);
+              }
+            });
+            const geometry = this.getCubeGeometry(directions);
+            const mesh = this.createCube(geometry, [x, y, z], cube.state, {
               x: this.puzzleComponent.clues.x?.[y]?.[z],
               y: this.puzzleComponent.clues.y?.[x]?.[z],
               z: this.puzzleComponent.clues.z?.[x]?.[y],
             });
             mesh.cube = cube;
+            set(this.meshes, `[${x}][${y}][${z}]`, mesh);
             cubesMesh.add(mesh);
           }
         });
@@ -256,5 +368,41 @@ export default class RenderComponent {
     this.pivot.rotation.x += 0.1;
     this.pivot.rotation.y += 0.5;
     scene.add(this.pivot);
+    // todo check if empty cube uses just 1 render draw (and not 6)
+  }
+
+  getCubeGeometry(sides) {
+    const positions = [];
+    const indices = [];
+    const uvs = [];
+    const normals = [];
+    const geometry = new THREE.BufferGeometry();
+
+    sides.forEach((sideIndex, i) => {
+      const side = this.faces[sideIndex];
+      // eslint-disable-next-line no-restricted-syntax
+      for (const { pos, uv } of side.corners) {
+        positions.push(...pos);
+        normals.push(...side.dir);
+        uvs.push(...uv);
+      }
+      const ndx = i * 4;
+      indices.push(
+        ndx, ndx + 2, ndx + 1,
+        ndx + 2, ndx + 3, ndx + 1,
+      );
+      geometry.addGroup(i * 6, 6, sideIndex);
+    });
+
+    const setPositions = new Float32Array(positions);
+    const setNormals = new Float32Array(normals);
+    const setUvs = new Float32Array(uvs);
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(setPositions, 3));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(setNormals, 3));
+    geometry.setAttribute('uv', new THREE.BufferAttribute(setUvs, 2));
+    geometry.setIndex(indices);
+
+    return geometry;
   }
 }

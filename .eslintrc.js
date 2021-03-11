@@ -12,5 +12,6 @@ module.exports = {
   },
   rules: {
     'no-nested-ternary': 0,
+    'no-continue': 0,
   },
 };
