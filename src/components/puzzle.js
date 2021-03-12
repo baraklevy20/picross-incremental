@@ -1,8 +1,3 @@
-/* eslint-disable import/no-dynamic-require */
-/* eslint-disable global-require */
-/* eslint-disable no-dupe-class-members */
-/* eslint-disable no-param-reassign */
-/* eslint-disable class-methods-use-this */
 import { get, set } from 'lodash';
 
 export default class PuzzleComponent {
@@ -116,9 +111,9 @@ export default class PuzzleComponent {
       }
 
       const lineWithoutZeroes = lines[axis][first][second].filter((c) => c !== 0);
-      const changes = this.solveLine(lines[axis][first][second], clue);
-      const added = changes.reduce((sum, change) => (sum + change.value < 0x40 ? 1 : 0), 0);
-      const removed = changes.reduce((sum, change) => (sum + change >= 0x40 ? 1 : 0), 0);
+      const changes = PuzzleComponent.solveLine(lines[axis][first][second], clue);
+      // const added = changes.reduce((sum, change) => (sum + change.value < 0x40 ? 1 : 0), 0);
+      // const removed = changes.reduce((sum, change) => (sum + change >= 0x40 ? 1 : 0), 0);
 
       // return added + removed ** 2;
       // // Special case
@@ -137,7 +132,7 @@ export default class PuzzleComponent {
       const currentClue = clues[i];
       clues[i] = null;
       this.setClues(clues);
-      if (!this.isSolvable(this.getLinesWithoutSolid())) {
+      if (!this.isSolvable()) {
         clues[i] = currentClue;
         this.setClues(clues);
       }
@@ -177,7 +172,8 @@ export default class PuzzleComponent {
     });
   }
 
-  isSolvable(lines) {
+  isSolvable() {
+    const lines = this.getLinesWithoutSolid();
     let changed = true;
 
     // Solve the board until there are no changes
@@ -185,7 +181,7 @@ export default class PuzzleComponent {
       changed = false;
       for (let i = 0; i < lines.x.length; i += 1) {
         for (let j = 0; j < lines.x[i].length; j += 1) {
-          const changes = this.solveLine(lines.x[i][j], this.clues.x?.[i]?.[j]);
+          const changes = PuzzleComponent.solveLine(lines.x[i][j], this.clues.x?.[i]?.[j]);
           changed = changed || changes.length > 0;
 
           changes.forEach((change) => {
@@ -198,7 +194,7 @@ export default class PuzzleComponent {
 
       for (let i = 0; i < lines.y.length; i += 1) {
         for (let j = 0; j < lines.y[i].length; j += 1) {
-          const changes = this.solveLine(lines.y[i][j], this.clues.y?.[i]?.[j]);
+          const changes = PuzzleComponent.solveLine(lines.y[i][j], this.clues.y?.[i]?.[j]);
           changed = changed || changes.length > 0;
 
           changes.forEach((change) => {
@@ -211,7 +207,7 @@ export default class PuzzleComponent {
 
       for (let i = 0; i < lines.z.length; i += 1) {
         for (let j = 0; j < lines.z[i].length; j += 1) {
-          const changes = this.solveLine(lines.z[i][j], this.clues.z?.[i]?.[j]);
+          const changes = PuzzleComponent.solveLine(lines.z[i][j], this.clues.z?.[i]?.[j]);
           changed = changed || changes.length > 0;
 
           changes.forEach((change) => {
@@ -224,7 +220,7 @@ export default class PuzzleComponent {
     }
 
     // In the end, either there's a solution or no solution.
-    return this.isSolvedByLines(lines);
+    return PuzzleComponent.isSolvedByLines(lines);
   }
 
   getLinesWithoutSolid() {
@@ -368,26 +364,26 @@ export default class PuzzleComponent {
           .every((c) => c.state !== 'empty' && c.state !== 'paintedEmpty')));
   }
 
-  isSolvedByLines(lines) {
+  static isSolvedByLines(lines) {
     return lines.x.every((y) => y.every((z) => z.every((c) => c === 0 || (c >= 0x30 && c < 0x50))))
       && lines.y.every((x) => x.every((z) => z.every((c) => c === 0 || (c >= 0x30 && c < 0x50))))
       && lines.z.every((x) => x.every((y) => y.every((c) => c === 0 || (c >= 0x30 && c < 0x50))));
   }
 
-  solveLineWithBlocks(line, blocks) {
+  static solveLineWithBlocks(line, blocks) {
     // If the line is empty, return all spaces
     if (blocks[0] === 0) {
       return Array(line.length).fill(0x40);
     }
 
-    const leftmostSolution = this.getLeftmostSolution(line, blocks);
+    const leftmostSolution = PuzzleComponent.getLeftmostSolution(line, blocks);
 
     // If the line is unsolvable
     if (!leftmostSolution) {
       return null;
     }
 
-    const rightmostSolution = this.getRightmostSolution(line, blocks);
+    const rightmostSolution = PuzzleComponent.getRightmostSolution(line, blocks);
 
     const solution = [...line];
 
@@ -401,7 +397,8 @@ export default class PuzzleComponent {
     }
 
     for (let i = 0; i < line.length; i += 1) {
-      if (line[i] !== 0 && this.isEmpty(blocks, leftmostSolution, rightmostSolution, i)) {
+      if (line[i] !== 0
+        && PuzzleComponent.isEmpty(blocks, leftmostSolution, rightmostSolution, i)) {
         solution[i] = 0x40;
       }
     }
@@ -409,22 +406,22 @@ export default class PuzzleComponent {
     return solution;
   }
 
-  getAllPossibleBlockCombinations(clue) {
+  static getAllPossibleBlockCombinations(clue) {
     if (clue.spaces <= 1) {
-      return this.calculateComposition(clue.count, clue.spaces + 1);
+      return PuzzleComponent.calculateComposition(clue.count, clue.spaces + 1);
     }
 
     // If we have more than 2 groups, we consider all groups of size >= 3
     let combinations = [];
 
     for (let i = 3; i <= clue.count; i += 1) {
-      combinations = combinations.concat(this.calculateComposition(clue.count, i));
+      combinations = combinations.concat(PuzzleComponent.calculateComposition(clue.count, i));
     }
 
     return combinations;
   }
 
-  solveLine(line, clue) {
+  static solveLine(line, clue) {
     if (!clue) {
       return [];
     }
@@ -436,13 +433,13 @@ export default class PuzzleComponent {
     }
 
     const changes = [];
-    const blocks = this.getAllPossibleBlockCombinations(clue);
+    const blocks = PuzzleComponent.getAllPossibleBlockCombinations(clue);
     const allPossibleSolutions = blocks
-      .map((b) => this.solveLineWithBlocks(line, b))
+      .map((b) => PuzzleComponent.solveLineWithBlocks(line, b))
       .filter((s) => !!s);
 
     for (let i = 0; i < line.length; i += 1) {
-      if (this.areAllCellsSame(allPossibleSolutions, i)
+      if (PuzzleComponent.areAllCellsSame(allPossibleSolutions, i)
         && line[i] !== allPossibleSolutions[0][i]) {
         changes.push({ index: i, value: allPossibleSolutions[0][i] });
       }
@@ -451,7 +448,7 @@ export default class PuzzleComponent {
     return changes;
   }
 
-  areAllCellsSame(solutions, index) {
+  static areAllCellsSame(solutions, index) {
     const currentCell = solutions[0][index];
 
     for (let i = 0; i < solutions.length; i += 1) {
@@ -463,14 +460,14 @@ export default class PuzzleComponent {
     return true;
   }
 
-  calculateComposition(n, k) {
+  static calculateComposition(n, k) {
     if (k === 1) {
       return [[n]];
     }
 
     const output = [];
     for (let i = 1; i <= n - 1; i += 1) {
-      const results = this.calculateComposition(n - i, k - 1);
+      const results = PuzzleComponent.calculateComposition(n - i, k - 1);
       results.forEach((result) => {
         output.push([i, ...result]);
       });
@@ -479,7 +476,7 @@ export default class PuzzleComponent {
     return output;
   }
 
-  isEmpty(blocks, leftmostSolution, rightmostSolution, position) {
+  static isEmpty(blocks, leftmostSolution, rightmostSolution, position) {
     for (let i = 0; i < blocks.length; i += 1) {
       if (position >= leftmostSolution[i] && position < rightmostSolution[i] + blocks[i]) {
         return false;
@@ -489,18 +486,18 @@ export default class PuzzleComponent {
     return true;
   }
 
-  getRightmostSolution(line, blocks) {
+  static getRightmostSolution(line, blocks) {
     const reversedLine = [...line].reverse();
     const reversedBlocks = [...blocks].reverse();
 
     // The reversed solutions' positions start from the end
     // (so position 0 = position - 1 - blocksize)
-    const reversedSolution = this.getLeftmostSolution(reversedLine, reversedBlocks);
+    const reversedSolution = PuzzleComponent.getLeftmostSolution(reversedLine, reversedBlocks);
     return reversedSolution.map((e, i) => line.length - e - reversedBlocks[i]).reverse();
   }
 
-  getLeftmostSolution(line, blocks) {
-    const positions = this.getSimpleLeftmostSolution(line, blocks, 0, 0);
+  static getLeftmostSolution(line, blocks) {
+    const positions = PuzzleComponent.getSimpleLeftmostSolution(line, blocks, 0, 0);
 
     if (!positions) {
       return null;
@@ -511,10 +508,10 @@ export default class PuzzleComponent {
       isDone = true;
       for (let i = line.length - 1; i >= 0; i -= 1) {
         // If this is an unassigned solid
-        if (this.isUnassignedSolid(line, i, positions, blocks)) {
+        if (PuzzleComponent.isUnassignedSolid(line, i, positions, blocks)) {
           isDone = false;
           // Get rightmost block to the left of this unassigned solid
-          let j = this.getRightmostBlockToTheLeftOfPosition(positions, i) + 1;
+          let j = PuzzleComponent.getRightmostBlockToTheLeftOfPosition(positions, i) + 1;
 
           // If there isn't any block to the left to fit this unassigned solid
           if (j === 0) {
@@ -528,7 +525,7 @@ export default class PuzzleComponent {
 
             // If we can't place it, move it to the right until we can
             while (positions[j] <= i
-              && !this.canPlaceBlock(line, blocks[j], positions[j])) {
+              && !PuzzleComponent.canPlaceBlock(line, blocks[j], positions[j])) {
               positions[j] += 1;
             }
 
@@ -537,7 +534,7 @@ export default class PuzzleComponent {
 
           // If we get here, we managed to place the current block in the unassigned solid
           // we now reposition blocks on the right
-          const partialSolution = this.getSimpleLeftmostSolution(
+          const partialSolution = PuzzleComponent.getSimpleLeftmostSolution(
             line,
             blocks,
             positions[j] + blocks[j] + 1,
@@ -558,7 +555,7 @@ export default class PuzzleComponent {
     return positions;
   }
 
-  isUnassignedSolid(line, position, positions, blocks) {
+  static isUnassignedSolid(line, position, positions, blocks) {
     if (line[position] < 0x30 || line[position] >= 0x40) {
       return false;
     }
@@ -572,7 +569,7 @@ export default class PuzzleComponent {
     return true;
   }
 
-  getRightmostBlockToTheLeftOfPosition(positions, position) {
+  static getRightmostBlockToTheLeftOfPosition(positions, position) {
     for (let j = positions.length - 1; j >= 0; j -= 1) {
       if (positions[j] < position) {
         return j;
@@ -581,12 +578,12 @@ export default class PuzzleComponent {
     return -1;
   }
 
-  getSimpleLeftmostSolution(line, blocks, startLinePosition, startBlock) {
+  static getSimpleLeftmostSolution(line, blocks, startLinePosition, startBlock) {
     const solution = [];
     let position = startLinePosition;
 
     for (let i = startBlock; i < blocks.length; i += 1) {
-      while (position < line.length && !this.canPlaceBlock(line, blocks[i], position)) {
+      while (position < line.length && !PuzzleComponent.canPlaceBlock(line, blocks[i], position)) {
         position += 1;
       }
 
@@ -605,7 +602,7 @@ export default class PuzzleComponent {
     return solution;
   }
 
-  canPlaceBlock(line, block, position) {
+  static canPlaceBlock(line, block, position) {
     // If the block would overflow the line, it can't be place here
     if (position + block > line.length) {
       return false;

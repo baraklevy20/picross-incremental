@@ -172,8 +172,7 @@ export default class GameComponent {
     return this.upgrades['gold-per-cube'].currentValue;
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  getWinningAnimationTime() {
+  static getWinningAnimationTime() {
     return 4000; // todo change with upgrade
   }
 

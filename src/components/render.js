@@ -174,8 +174,7 @@ export default class RenderComponent {
     return materials;
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  setColor(cube, color) {
+  static setColor(cube, color) {
     if (Array.isArray(cube.children[0].material)) {
       cube.children[0].material.forEach((m) => {
         m.color.set(color);
@@ -191,7 +190,7 @@ export default class RenderComponent {
     }
 
     if (mesh.cube.state === 'empty' || mesh.cube.state === 'part') {
-      this.setColor(mesh, this.selectedCubeColor);
+      RenderComponent.setColor(mesh, this.selectedCubeColor);
     }
   }
 
@@ -202,10 +201,10 @@ export default class RenderComponent {
 
     switch (mesh.cube.state) {
       case 'empty':
-        this.setColor(mesh, this.emptyCubeColor);
+        RenderComponent.setColor(mesh, this.emptyCubeColor);
         break;
       case 'part':
-        this.setColor(mesh, this.cubeColor);
+        RenderComponent.setColor(mesh, this.cubeColor);
         break;
       default:
     }
@@ -216,7 +215,7 @@ export default class RenderComponent {
       return;
     }
 
-    this.setColor(cube, this.paintedCubeColor);
+    RenderComponent.setColor(cube, this.paintedCubeColor);
   }
 
   unpaintCube(cube) {
@@ -229,7 +228,7 @@ export default class RenderComponent {
       return;
     }
 
-    this.setColor(cube, this.brokenPartColor);
+    RenderComponent.setColor(cube, this.brokenPartColor);
   }
 
   destroyCube(cube) {
@@ -271,8 +270,7 @@ export default class RenderComponent {
     }
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  getPuzzleCenter(cubes) {
+  static getPuzzleCenter(cubes) {
     const xArr = [];
     const yArr = [];
     const zArr = [];
@@ -316,7 +314,7 @@ export default class RenderComponent {
   generatePuzzleMesh() {
     this.destroyPreviousPuzzleMesh();
     const pivot = new THREE.Group();
-    const centerPoint = this.getPuzzleCenter(this.puzzleComponent.cubes);
+    const centerPoint = RenderComponent.getPuzzleCenter(this.puzzleComponent.cubes);
     const cubesMesh = new THREE.Object3D();
     cubesMesh.position.set(
       -centerPoint[0] * this.cubeSize,
@@ -366,12 +364,11 @@ export default class RenderComponent {
 
     sides.forEach((sideIndex, i) => {
       const side = this.faces[sideIndex];
-      // eslint-disable-next-line no-restricted-syntax
-      for (const { pos, uv } of side.corners) {
+      side.corners.forEach(({ pos, uv }) => {
         positions.push(...pos);
         normals.push(...side.dir);
         uvs.push(...uv);
-      }
+      });
       const ndx = i * 4;
       indices.push(
         ndx, ndx + 2, ndx + 1,

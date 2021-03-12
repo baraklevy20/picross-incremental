@@ -95,7 +95,7 @@ const onMouseClick = (mouse) => {
             console.log('good job');
             gameComponent.onPuzzleComplete();
             isPuzzleComplete = true;
-            setTimeout(moveToNextPuzzle, gameComponent.getWinningAnimationTime());
+            setTimeout(moveToNextPuzzle, GameComponent.getWinningAnimationTime());
           }
         } else if (mouse.button === 'right') {
           clickedCubeMesh.cube.state = 'paintedEmpty';
