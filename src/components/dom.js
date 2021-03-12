@@ -58,13 +58,16 @@ export default class DomComponent {
   static updateGameTime(startTime) {
     const timeLeft = Math.floor((30000 - (performance.now() - startTime)) / 1000);
     const timeValueElement = document.getElementById('timeValue');
-    const timeElement = document.getElementById('time');
+    const goodTimeElement = document.getElementById('timeGood');
+    const badTimeElement = document.getElementById('timeBad');
 
     if (timeLeft >= 0) {
+      goodTimeElement.style.display = 'block';
+      badTimeElement.style.display = 'none';
       timeValueElement.innerText = timeLeft;
     } else {
-      timeElement.style.color = 'red';
-      timeElement.innerText = 'No time bonus';
+      badTimeElement.style.display = 'block';
+      goodTimeElement.style.display = 'none';
     }
   }
 }
