@@ -8,11 +8,6 @@ import PuzzleComponent from './components/puzzle';
 import GameComponent from './components/game';
 import DomComponent from './components/dom';
 
-// const voxFile = require('../models/5x5x1/smile.vox');
-const voxFile = require('../models/5x5x1/t.vox');
-// const voxFile = require('../models/#cat_01.vox');
-// const voxFile = require('../models/cart.vox');
-
 const cubeSize = 1;
 let isPuzzleComplete = false;
 
@@ -73,13 +68,9 @@ const onMove = (mouse) => {
   }
 };
 
-const moveToNextPuzzle = () => {
+const moveToNextPuzzle = async () => {
   isPuzzleComplete = false;
-  puzzleComponent.generatePuzzle(
-    gameComponent.getWidth(),
-    gameComponent.getHeight(),
-    gameComponent.getDepth(),
-  );
+  await puzzleComponent.onNextPuzzle();
   gameComponent.nextPuzzle();
   renderComponent.generatePuzzleMesh();
   physicsComponent.pivot = renderComponent.pivot;
@@ -139,8 +130,9 @@ const onMouseClick = (mouse) => {
   }
 };
 
-const initComponents = () => {
-  puzzleComponent = new PuzzleComponent(voxFile);
+const initComponents = async () => {
+  puzzleComponent = new PuzzleComponent();
+  await puzzleComponent.generatePuzzle(5, 5, 1);
   renderComponent = new RenderComponent(cubeSize);
   renderComponent.createPuzzleMesh(puzzleComponent);
   inputComponent = new InputComponent();
@@ -190,17 +182,17 @@ const initCamera = () => {
   controls.update();
 };
 
-const init = () => {
+const init = async () => {
   initRenderer();
-  initComponents();
+  await initComponents();
   initOrbitControl();
   initCamera();
 };
 
-const main = () => {
+const main = async () => {
   // Remove font loader div
   document.getElementById('preloadfont').remove();
-  init();
+  await init();
   animate();
 };
 

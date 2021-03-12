@@ -1,14 +1,21 @@
+/* eslint-disable import/no-dynamic-require */
+/* eslint-disable global-require */
 /* eslint-disable no-dupe-class-members */
 /* eslint-disable no-param-reassign */
 /* eslint-disable class-methods-use-this */
 import { get, set } from 'lodash';
 
 export default class PuzzleComponent {
-  constructor(voxFile) {
-    this.generatePuzzle(voxFile, 5, 5, 1);
+  constructor() {
+    this.puzzles = [
+      '5x5x1/t.vox',
+      '5x5x1/smile.vox',
+    ];
+    this.currentPuzzleIndex = 0;
   }
 
-  voxFileToPuzzle(voxFile) {
+  async voxFileToPuzzle(voxFilePath) {
+    const { default: voxFile } = await import(`../../models/${voxFilePath}`);
     this.cubes = [];
     voxFile.xyzi.values.forEach((xyzi) => {
       set(this.cubes, `[${xyzi.x}][${xyzi.z}][${xyzi.y}]`, 0x30);
@@ -26,8 +33,13 @@ export default class PuzzleComponent {
     }
   }
 
-  generatePuzzle(voxFile, width, height, depth) {
-    this.voxFileToPuzzle(voxFile);
+  async onNextPuzzle() {
+    this.currentPuzzleIndex = (this.currentPuzzleIndex + 1) % this.puzzles.length;
+    await this.generatePuzzle();
+  }
+
+  async generatePuzzle(width, height, depth) {
+    await this.voxFileToPuzzle(this.puzzles[this.currentPuzzleIndex]);
     this.brokenSolids = 0;
     this.clues = this.generateClues();
     this.removeClues();
