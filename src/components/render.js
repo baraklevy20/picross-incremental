@@ -6,15 +6,12 @@ import { scene } from '../context';
 export default class RenderComponent {
   constructor(cubeSize) {
     this.cubeSize = cubeSize;
-    this.cubeColor = '#d7d7d7';
-    this.emptyCubeColor = '#ffffd7';
-    this.selectedCubeColor = '#c7c7c7';
-    this.paintedCubeColor = '#0000ff';
-    this.brokenPartColor = '#ff0000';
-    this.geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-    this.material = new THREE.MeshBasicMaterial({ color: this.cubeColor });
-    this.emptyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffd7 });
-    this.selectedMaterial = new THREE.MeshBasicMaterial({ color: 0xc7c7c7 });
+    // this.cubeColor = '#ff0000';
+    this.cubeColor = '#DEDEDE';
+    this.selectedCubeColor = '#d0d0d0';
+    this.emptyCubeColor = '#DEDEDE';
+    this.paintedCubeColor = '#6666FF';
+    this.brokenPartColor = '#FF6666';
     this.cache = {};
     this.meshes = [];
     this.faces = [
@@ -93,7 +90,7 @@ export default class RenderComponent {
   createFaceMaterial(clue, state) {
     const cacheKey = clue
       ? `${state}-${clue.spaces > 1 ? 2 : clue.spaces}-${clue.count}`
-      : 'empty';
+      : state;
 
     const cacheValue = this.cache[cacheKey];
     if (cacheValue) {
