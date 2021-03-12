@@ -6,12 +6,14 @@ import { scene } from '../context';
 export default class RenderComponent {
   constructor(cubeSize) {
     this.cubeSize = cubeSize;
-    // this.cubeColor = '#ff0000';
-    this.cubeColor = '#DEDEDE';
+    this.stateColors = {
+      part: '#DEDEDE',
+      empty: '#DEDEDE',
+      painted: '#6666FF',
+      paintedEmpty: '#6666FF',
+      brokenSolid: '#FF6666',
+    };
     this.selectedCubeColor = '#d0d0d0';
-    this.emptyCubeColor = '#DEDEDE';
-    this.paintedCubeColor = '#6666FF';
-    this.brokenPartColor = '#FF6666';
     this.cache = {};
     this.meshes = [];
     this.faces = [
@@ -72,15 +74,15 @@ export default class RenderComponent {
     ];
   }
 
-  createCube(geometry, cubePosition, state, clue) {
+  createCube(geometry, position, state, clue) {
     const group = new THREE.Group();
     const material = this.createTextMaterial(clue, state);
 
     const cube = new THREE.Mesh(geometry, material);
     cube.position.set(
-      cubePosition[0] * this.cubeSize,
-      cubePosition[1] * this.cubeSize,
-      cubePosition[2] * this.cubeSize,
+      position[0] * this.cubeSize,
+      position[1] * this.cubeSize,
+      position[2] * this.cubeSize,
     );
 
     group.add(cube);
@@ -151,7 +153,7 @@ export default class RenderComponent {
     }
     const textMaterial = new THREE.MeshBasicMaterial();
     textMaterial.map = new THREE.CanvasTexture(canvas);
-    textMaterial.color.set(state === 'empty' ? this.emptyCubeColor : this.cubeColor);
+    textMaterial.color.set(this.stateColors[state]);
     this.cache[cacheKey] = textMaterial;
     return textMaterial;
   }
@@ -174,70 +176,75 @@ export default class RenderComponent {
     return materials;
   }
 
-  static setColor(cube, color) {
-    if (Array.isArray(cube.children[0].material)) {
-      cube.children[0].material.forEach((m) => {
+  static setColor(mesh, color) {
+    if (Array.isArray(mesh.children[0].material)) {
+      mesh.children[0].material.forEach((m) => {
         m.color.set(color);
       });
     } else {
-      cube.children[0].material.color.set(color);
+      mesh.children[0].material.color.set(color);
     }
   }
 
-  selectCube(mesh) {
+  static setOpacity(mesh, opacity) {
+    if (Array.isArray(mesh.children[0].material)) {
+      mesh.children[0].material.forEach((m) => {
+        m.transparent = true;
+        m.opacity = opacity;
+      });
+    } else {
+      mesh.children[0].material.transparent = true;
+      mesh.children[0].material.opacity = opacity;
+    }
+  }
+
+  static selectCube(mesh) {
     if (!mesh) {
       return;
     }
 
-    if (mesh.cube.state === 'empty' || mesh.cube.state === 'part') {
-      RenderComponent.setColor(mesh, this.selectedCubeColor);
-    }
+    RenderComponent.setOpacity(mesh, 0.9);
   }
 
-  deselectCube(mesh) {
+  static deselectCube(mesh) {
     if (!mesh) {
       return;
     }
 
-    switch (mesh.cube.state) {
-      case 'empty':
-        RenderComponent.setColor(mesh, this.emptyCubeColor);
-        break;
-      case 'part':
-        RenderComponent.setColor(mesh, this.cubeColor);
-        break;
-      default:
-    }
+    RenderComponent.setOpacity(mesh, 1);
   }
 
-  paintCube(cube) {
-    if (!cube) {
+  paintCube(mesh) {
+    if (!mesh) {
       return;
     }
 
-    RenderComponent.setColor(cube, this.paintedCubeColor);
+    RenderComponent.setColor(mesh, this.stateColors.painted);
   }
 
-  unpaintCube(cube) {
-    // in the future it might be different. maybe some special effects etc
-    this.deselectCube(cube);
-  }
-
-  setBrokenPartCube(cube) {
-    if (!cube) {
+  unpaintCube(mesh) {
+    if (!mesh) {
       return;
     }
 
-    RenderComponent.setColor(cube, this.brokenPartColor);
+    RenderComponent.setColor(mesh, this.stateColors[mesh.cube.state]);
   }
 
-  destroyCube(cube) {
-    if (!cube) {
+  breakSolidCube(mesh) {
+    if (!mesh) {
       return;
     }
 
-    this.pivot.children[0].remove(cube);
-    cube.children.forEach((c) => c.geometry.dispose());
+    RenderComponent.setColor(mesh, this.stateColors.brokenSolid);
+  }
+
+  destroyCube(mesh) {
+    if (!mesh) {
+      return;
+    }
+
+    this.pivot.children[0].remove(mesh);
+    mesh.children.forEach((c) => c.geometry.dispose());
 
     // Change geometry of near-by cubes to now show their faces
     for (let dx = -1; dx <= 1; dx += 1) {
@@ -247,11 +254,12 @@ export default class RenderComponent {
             continue;
           }
 
-          const x = cube.cube.position.x + dx;
-          const y = cube.cube.position.y + dy;
-          const z = cube.cube.position.z + dz;
+          const x = mesh.cube.position.x + dx;
+          const y = mesh.cube.position.y + dy;
+          const z = mesh.cube.position.z + dz;
 
-          if (!(get(this.puzzleComponent.cubes, `[${x}][${y}][${z}]`))) {
+          const neighborCube = get(this.puzzleComponent.cubes, `[${x}][${y}][${z}]`);
+          if (!neighborCube || neighborCube.state === 'nothing') {
             continue;
           }
 
@@ -278,7 +286,7 @@ export default class RenderComponent {
     cubes.forEach((face, x) => {
       face.forEach((line, y) => {
         line.forEach((cube, z) => {
-          if (cube.state === 'part' || cube.state === 'empty') {
+          if (cube.state !== 'nothing') {
             xArr.push(x);
             yArr.push(y);
             zArr.push(z);
@@ -303,16 +311,13 @@ export default class RenderComponent {
   }
 
   destroyPreviousPuzzleMesh() {
-    if (this.pivot) {
-      this.pivot.children[0].children.forEach((cube) => {
-        this.destroyCube(cube);
-      });
-      scene.remove(this.pivot);
-    }
+    this.pivot.children[0].children.forEach((cube) => {
+      this.destroyCube(cube);
+    });
+    scene.remove(this.pivot);
   }
 
   generatePuzzleMesh() {
-    this.destroyPreviousPuzzleMesh();
     const pivot = new THREE.Group();
     const centerPoint = RenderComponent.getPuzzleCenter(this.puzzleComponent.cubes);
     const cubesMesh = new THREE.Object3D();
@@ -326,7 +331,7 @@ export default class RenderComponent {
     this.puzzleComponent.cubes.forEach((face, x) => {
       face.forEach((line, y) => {
         line.forEach((cube, z) => {
-          if (cube.state === 'part' || cube.state === 'empty') {
+          if (cube.state !== 'nothing') {
             const directions = [];
             this.faces.forEach(({ dir }, i) => {
               const neighbor = get(this.puzzleComponent.cubes, `[${x + dir[0]}][${y + dir[1]}][${z + dir[2]}]`);

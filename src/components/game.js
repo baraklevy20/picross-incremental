@@ -1,8 +1,8 @@
 import { Subject } from 'rxjs';
 
 export default class GameComponent {
-  constructor(puzzle) {
-    this.puzzle = puzzle;
+  constructor(puzzleComponent) {
+    this.puzzleComponent = puzzleComponent;
     this.observable = new Subject();
     this.setGold(10);
 
@@ -14,7 +14,7 @@ export default class GameComponent {
         baseValue: 5,
         level: 0,
         costExp: 12.5,
-        nextValueFormula: (value) => value + 1,
+        valueAddition: 1,
       },
       'puzzle-height': {
         name: 'puzzle-height',
@@ -23,7 +23,7 @@ export default class GameComponent {
         baseValue: 5,
         level: 0,
         costExp: 12,
-        nextValueFormula: (value) => value + 1,
+        valueAddition: 1,
       },
       'gold-per-cube': {
         name: 'gold-per-cube',
@@ -32,7 +32,7 @@ export default class GameComponent {
         baseValue: 1,
         level: 0,
         costExp: 1.15,
-        nextValueFormula: (value) => Math.ceil(value * 1.05),
+        valueMultiplier: 1.05,
       },
       'unlock-circles': {
         name: 'unlock-circles',
@@ -83,9 +83,7 @@ export default class GameComponent {
       // },
     };
 
-    this.calculateUpgradesValues();
     this.initGame();
-
     this.completions = 0;
   }
 
@@ -98,6 +96,7 @@ export default class GameComponent {
     if (upgrade.cost <= this.gold) {
       this.setGold(this.gold - upgrade.cost);
       upgrade.level += 1;
+      upgrade.currentValue = upgrade.nextValue;
       GameComponent.calculateUpgradeValues(upgrade);
       this.observable.next({
         type: 'upgrade_levelup',
@@ -136,10 +135,15 @@ export default class GameComponent {
 
     upgrade.cost = Math.ceil(upgrade.baseCost * (upgrade.costExp ** upgrade.level));
 
-    if (upgrade.baseValue !== undefined) {
-      upgrade.currentValue = upgrade.nextValue || upgrade.baseValue;
-      upgrade.nextValue = upgrade.nextValueFormula(upgrade.currentValue);
+    if (upgrade.level === 0) {
+      upgrade.currentValue = upgrade.baseValue;
     }
+
+    const nextValue = upgrade.valueMultiplier
+      ? Math.ceil(upgrade.currentValue * upgrade.valueMultiplier)
+      : upgrade.currentValue + upgrade.valueAddition;
+
+    upgrade.nextValue = nextValue;
   }
 
   init() {
@@ -156,9 +160,9 @@ export default class GameComponent {
   onPuzzleComplete() {
     this.completions += 1;
     console.log(this.completions);
-    let reward = this.puzzle.numberOfSolids * this.getGoldPerDestroyedCube();
+    let reward = this.puzzleComponent.numberOfSolids * this.getGoldPerDestroyedCube();
     const timeBonus = performance.now() - this.gameStartTime < 30000;
-    const noMistakesBonus = this.puzzle.brokenSolids === 0;
+    const noMistakesBonus = this.puzzleComponent.brokenSolids === 0;
     let perfectGameMultiplier = 1;
     if (timeBonus) {
       perfectGameMultiplier *= 1.5;
@@ -172,7 +176,7 @@ export default class GameComponent {
 
     // If there's a multiplier, we'll also multiply the number of spaces
     // but we 1 as we've already gotten the reward for these while playing
-    reward += this.puzzle.numberOfSpaces
+    reward += this.puzzleComponent.numberOfSpaces
       * (perfectGameMultiplier - 1) * this.getGoldPerDestroyedCube();
 
     const puzzleSize = this.getWidth() * this.getHeight();

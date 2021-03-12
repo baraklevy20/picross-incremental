@@ -1,5 +1,6 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Stats from 'stats.js';
+import { merge } from 'lodash';
 import { renderer, scene, camera } from './context';
 import InputComponent from './components/input';
 import PhysicsComponent from './components/physics';
@@ -19,6 +20,56 @@ let renderComponent;
 let puzzleComponent;
 let gameComponent;
 let domComponent;
+
+const saveGame = () => {
+  const save = (component) => {
+    const result = { };
+
+    Object.keys(component).forEach((key) => {
+      // Ignore observables and components
+      if (key === 'observable'
+        || key.indexOf('Component') >= 0
+        || component[key] === undefined) {
+        return;
+      }
+
+      result[key] = component[key];
+    });
+
+    return result;
+  };
+  localStorage.setItem('gameSave', JSON.stringify({
+    game: save(gameComponent),
+    puzzle: save(puzzleComponent),
+  }));
+};
+
+const loadGame = () => {
+  const saveString = localStorage.getItem('gameSave');
+
+  const load = (component, saveFile) => {
+    Object.keys(saveFile).forEach((key) => {
+      if (typeof saveFile[key] === 'object' && !Array.isArray(saveFile[key])) {
+        // todo future bug - if i change one of the values in upgrades such as cost exp,
+        // it'll actually take the value in the local storage instead of the updated one.
+        // eslint-disable-next-line no-param-reassign
+        component[key] = merge(component[key], saveFile[key]);
+      } else {
+      // eslint-disable-next-line no-param-reassign
+        component[key] = saveFile[key];
+      }
+    });
+  };
+
+  if (saveString) {
+    const saveObject = JSON.parse(saveString);
+
+    load(gameComponent, saveObject.game);
+    load(puzzleComponent, saveObject.puzzle);
+  }
+};
+
+setInterval(saveGame, 3000);
 
 const stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -54,15 +105,15 @@ const onMove = (mouse) => {
 
     // If we used to point at a different cube, deselect the previous cube
     if (intersectedCube) {
-      renderComponent.deselectCube(intersectedCube);
+      RenderComponent.deselectCube(intersectedCube);
     }
 
     // Select the newly pointed-at cube
     intersectedCube = newIntersectedCube;
-    renderComponent.selectCube(intersectedCube);
+    RenderComponent.selectCube(intersectedCube);
   } else {
     // If we aren't pointing at any cube, deselect the previously pointed-at cube
-    renderComponent.deselectCube(intersectedCube);
+    RenderComponent.deselectCube(intersectedCube);
     intersectedCube = null;
     controls.enabled = true;
   }
@@ -70,6 +121,7 @@ const onMove = (mouse) => {
 
 const moveToNextPuzzle = async () => {
   isPuzzleComplete = false;
+  renderComponent.destroyPreviousPuzzleMesh();
   await puzzleComponent.onNextPuzzle(gameComponent);
   gameComponent.nextPuzzle();
   renderComponent.generatePuzzleMesh();
@@ -105,8 +157,8 @@ const onMouseClick = (mouse) => {
       case 'part':
         if (mouse.button === 'left') {
           // todo add more logic here. split to a function 'onWrongBreak'
-          clickedCubeMesh.cube.state = 'brokenPart';
-          renderComponent.setBrokenPartCube(clickedCubeMesh);
+          clickedCubeMesh.cube.state = 'brokenSolid';
+          renderComponent.breakSolidCube(clickedCubeMesh);
           puzzleComponent.onBrokenSolid();
         } else if (mouse.button === 'right') {
           clickedCubeMesh.cube.state = 'painted';
@@ -132,17 +184,13 @@ const onMouseClick = (mouse) => {
 
 const initComponents = async () => {
   puzzleComponent = new PuzzleComponent();
-  await puzzleComponent.generatePuzzle(5, 5, 1);
   renderComponent = new RenderComponent(cubeSize);
-  renderComponent.createPuzzleMesh(puzzleComponent);
   inputComponent = new InputComponent();
-  physicsComponent = new PhysicsComponent(renderComponent.pivot);
+  physicsComponent = new PhysicsComponent();
   gameComponent = new GameComponent(puzzleComponent);
   domComponent = new DomComponent(gameComponent.observable);
   gameComponent.setDomObservable(domComponent.observable);
   puzzleComponent.setGameObservable(gameComponent.observable);
-
-  domComponent.addUpgradesUI(gameComponent.upgrades);
 
   inputComponent.getObservable().subscribe(({ type, mouse }) => {
     switch (type) {
@@ -188,6 +236,17 @@ const init = async () => {
   await initComponents();
   initOrbitControl();
   initCamera();
+  loadGame();
+
+  // If this is the first game, generate the puzzle
+  if (!puzzleComponent.cubes) {
+    await puzzleComponent.generatePuzzle(5, 5, 1);
+  }
+
+  gameComponent.calculateUpgradesValues();
+  domComponent.addUpgradesUI(gameComponent.upgrades);
+  renderComponent.createPuzzleMesh(puzzleComponent);
+  physicsComponent.pivot = renderComponent.pivot;
 };
 
 const main = async () => {
