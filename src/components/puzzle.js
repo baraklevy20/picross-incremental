@@ -4,7 +4,10 @@ export default class PuzzleComponent {
   constructor() {
     this.puzzles = [
       '5x5x1/t.vox',
-      '5x5x1/smile.vox',
+      '5x5x1/plus.vox',
+      '5x5x1/L.vox',
+      '5x5x1/stairs.vox',
+      // '5x5x1/smile.vox',
     ];
     this.currentPuzzleIndex = 0;
   }
