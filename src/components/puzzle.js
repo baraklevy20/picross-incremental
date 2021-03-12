@@ -11,15 +11,15 @@ export default class PuzzleComponent {
   voxFileToPuzzle(voxFile) {
     this.cubes = [];
     voxFile.xyzi.values.forEach((xyzi) => {
-      set(this.cubes, `[${xyzi.x}][${xyzi.y}][${xyzi.z}]`, 0x30);
+      set(this.cubes, `[${xyzi.x}][${xyzi.z}][${xyzi.y}]`, 0x30);
     });
 
     // Fill the rest of the cells with empty
     for (let x = 0; x < voxFile.size.x; x += 1) {
       for (let y = 0; y < voxFile.size.y; y += 1) {
         for (let z = 0; z < voxFile.size.z; z += 1) {
-          if (!get(this.cubes, `[${x}][${y}][${z}]`)) {
-            set(this.cubes, `[${x}][${y}][${z}]`, 0x20);
+          if (!get(this.cubes, `[${x}][${z}][${y}]`)) {
+            set(this.cubes, `[${x}][${z}][${y}]`, 0x20);
           }
         }
       }

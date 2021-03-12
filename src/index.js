@@ -8,7 +8,9 @@ import PuzzleComponent from './components/puzzle';
 import GameComponent from './components/game';
 import DomComponent from './components/dom';
 
-const voxFile = require('../models/#cat_01.vox');
+// const voxFile = require('../models/5x5x1/smile.vox');
+const voxFile = require('../models/5x5x1/t.vox');
+// const voxFile = require('../models/#cat_01.vox');
 // const voxFile = require('../models/cart.vox');
 
 const cubeSize = 1;
@@ -163,7 +165,7 @@ const initComponents = () => {
 };
 
 const initRenderer = () => {
-  renderer.setClearColor(0x9999ff, 1);
+  renderer.setClearColor(0xc59e9e, 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
   document.body.appendChild(renderer.domElement);
