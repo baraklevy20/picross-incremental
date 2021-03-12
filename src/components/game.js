@@ -10,7 +10,7 @@ export default class GameComponent {
       'puzzle-width': {
         name: 'puzzle-width',
         label: 'Puzzle width',
-        baseCost: 1500,
+        baseCost: 15000,
         baseValue: 5,
         level: 0,
         costExp: 12.5,
@@ -19,7 +19,7 @@ export default class GameComponent {
       'puzzle-height': {
         name: 'puzzle-height',
         label: 'Puzzle height',
-        baseCost: 3750,
+        baseCost: 37500,
         baseValue: 5,
         level: 0,
         costExp: 12,

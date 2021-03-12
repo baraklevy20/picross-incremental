@@ -26,9 +26,11 @@ export default class PuzzleComponent {
       if (event.type === 'upgrade_levelup') {
         switch (event.upgrade.name) {
           case 'unlock-circles':
+            this.currentPuzzleIndex = this.puzzles.length - 1;
             this.puzzles = [...this.puzzles, ...this.puzzlesWithCircles];
             break;
           case 'unlock-squares':
+            this.currentPuzzleIndex = this.puzzles.length - 1;
             this.puzzles = [...this.puzzles, ...this.puzzlesWithSquares];
             break;
           default:
