@@ -34,6 +34,20 @@ export default class GameComponent {
         costExp: 1.15,
         nextValueFormula: (value) => Math.ceil(value * 1.05),
       },
+      'unlock-circles': {
+        name: 'unlock-circles',
+        label: 'Unlock circle clues and x2 gold per cube',
+        baseCost: 1500,
+        level: 0,
+        isFeature: true,
+      },
+      'unlock-squares': {
+        name: 'unlock-squares',
+        label: 'Unlock square clues and x2 gold per cube',
+        baseCost: 1,
+        level: 0,
+        isFeature: true,
+      },
       // {
       //   name: 'win-condition-multiplier',
       //   label: 'Win condition multiplier',
@@ -111,9 +125,21 @@ export default class GameComponent {
   }
 
   static calculateUpgradeValues(upgrade) {
+    if (upgrade.isFeature) {
+      upgrade.cost = upgrade.baseCost;
+      return;
+    }
+
+    if (upgrade.maxLevel !== undefined && upgrade.level >= upgrade.maxLevel) {
+      return;
+    }
+
     upgrade.cost = Math.ceil(upgrade.baseCost * (upgrade.costExp ** upgrade.level));
-    upgrade.currentValue = upgrade.nextValue || upgrade.baseValue;
-    upgrade.nextValue = upgrade.nextValueFormula(upgrade.currentValue);
+
+    if (upgrade.baseValue !== undefined) {
+      upgrade.currentValue = upgrade.nextValue || upgrade.baseValue;
+      upgrade.nextValue = upgrade.nextValueFormula(upgrade.currentValue);
+    }
   }
 
   init() {
@@ -169,15 +195,15 @@ export default class GameComponent {
   }
 
   getGoldPerDestroyedCube() {
-    return this.upgrades['gold-per-cube'].currentValue;
+    let value = 1;
+    value *= this.upgrades['gold-per-cube'].currentValue;
+    value *= this.upgrades['unlock-circles'].level === 1 ? 2 : 1;
+    value *= this.upgrades['unlock-squares'].level === 1 ? 2 : 1;
+    return value;
   }
 
   static getWinningAnimationTime() {
     return 4000; // todo change with upgrade
-  }
-
-  getObservable() {
-    return this.observable;
   }
 
   setDomObservable(observable) {

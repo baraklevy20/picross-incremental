@@ -2,14 +2,39 @@ import { get, set } from 'lodash';
 
 export default class PuzzleComponent {
   constructor() {
-    this.puzzles = [
+    this.puzzlesWithoutCircles = [
       '5x5x1/t.vox',
       '5x5x1/plus.vox',
       '5x5x1/L.vox',
       '5x5x1/stairs.vox',
-      // '5x5x1/smile.vox',
     ];
+
+    this.puzzlesWithCircles = [
+      '5x5x1/smile.vox',
+    ];
+
+    this.puzzlesWithSquares = [
+
+    ];
+
+    this.puzzles = this.puzzlesWithoutCircles;
     this.currentPuzzleIndex = 0;
+  }
+
+  setGameObservable(gameObservable) {
+    gameObservable.subscribe((event) => {
+      if (event.type === 'upgrade_levelup') {
+        switch (event.upgrade.name) {
+          case 'unlock-circles':
+            this.puzzles = [...this.puzzles, ...this.puzzlesWithCircles];
+            break;
+          case 'unlock-squares':
+            this.puzzles = [...this.puzzles, ...this.puzzlesWithSquares];
+            break;
+          default:
+        }
+      }
+    });
   }
 
   async voxFileToPuzzle(voxFilePath) {
@@ -36,7 +61,7 @@ export default class PuzzleComponent {
     await this.generatePuzzle();
   }
 
-  async generatePuzzle(width, height, depth) {
+  async generatePuzzle() {
     await this.voxFileToPuzzle(this.puzzles[this.currentPuzzleIndex]);
     this.brokenSolids = 0;
     this.clues = this.generateClues();

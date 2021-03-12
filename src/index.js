@@ -70,7 +70,7 @@ const onMove = (mouse) => {
 
 const moveToNextPuzzle = async () => {
   isPuzzleComplete = false;
-  await puzzleComponent.onNextPuzzle();
+  await puzzleComponent.onNextPuzzle(gameComponent);
   gameComponent.nextPuzzle();
   renderComponent.generatePuzzleMesh();
   physicsComponent.pivot = renderComponent.pivot;
@@ -138,8 +138,9 @@ const initComponents = async () => {
   inputComponent = new InputComponent();
   physicsComponent = new PhysicsComponent(renderComponent.pivot);
   gameComponent = new GameComponent(puzzleComponent);
-  domComponent = new DomComponent(gameComponent.getObservable());
+  domComponent = new DomComponent(gameComponent.observable);
   gameComponent.setDomObservable(domComponent.observable);
+  puzzleComponent.setGameObservable(gameComponent.observable);
 
   domComponent.addUpgradesUI(gameComponent.upgrades);
 

@@ -20,11 +20,17 @@ export default class DomComponent {
 
   addUpgradesUI(upgrades) {
     Object.values(upgrades).forEach((upgrade) => {
+      if (upgrade.isFeature && upgrade.level === 1) {
+        return;
+      }
+
       const element = `
-        <h6 class="font-weight-light text-center text-nowrap">
-          ${upgrade.label}: <span id="${upgrade.name}-current">${upgrade.currentValue}</span> <span id='${upgrade.name}-next' style="display: none;">(${upgrade.nextValue})</span>
-        </h6>
-        <button id="${upgrade.name}-buy-button"><span id="${upgrade.name}-buy-button-value">${upgrade.cost}</span> gold</button>
+        <span id="upgrade-${upgrade.name}">
+          <h6 class="font-weight-light text-center text-nowrap">
+            ${upgrade.label}${upgrade.currentValue !== undefined ? `: <span id="${upgrade.name}-current">${upgrade.currentValue}</span> <span id='${upgrade.name}-next' style="display: none;">(${upgrade.nextValue})</span>` : ''}
+          </h6>
+          <button id="${upgrade.name}-buy-button" style="width: 100%;"><span id="${upgrade.name}-buy-button-value">${upgrade.cost}</span> gold</button>
+        </span>
     `;
 
       $(document).on('click', `#${upgrade.name}-buy-button`, () => {
@@ -35,17 +41,26 @@ export default class DomComponent {
       });
 
       $(document).on('mouseover', `#${upgrade.name}-buy-button`, () => {
-        document.getElementById(`${upgrade.name}-next`).style.display = 'inline-block';
+        if (upgrade.nextValue !== undefined) {
+          document.getElementById(`${upgrade.name}-next`).style.display = 'inline-block';
+        }
       });
 
       $(document).on('mouseleave', `#${upgrade.name}-buy-button`, () => {
-        document.getElementById(`${upgrade.name}-next`).style.display = 'none';
+        if (upgrade.nextValue !== undefined) {
+          document.getElementById(`${upgrade.name}-next`).style.display = 'none';
+        }
       });
       document.getElementById('upgrades').innerHTML += element;
     });
   }
 
   static onUpgradeLevelUp(upgrade) {
+    if (upgrade.isFeature && upgrade.level === 1) {
+      $(`#upgrade-${upgrade.name}`).hide();
+      return;
+    }
+
     $(`#${upgrade.name}-buy-button-value`).text(upgrade.cost);
     $(`#${upgrade.name}-current`).text(upgrade.currentValue);
     $(`#${upgrade.name}-next`).text(`(${upgrade.nextValue})`);
