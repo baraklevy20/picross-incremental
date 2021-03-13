@@ -31,7 +31,7 @@ module.exports = {
       },
       {
         test: /\.vox$/,
-        use: './voxLoader.js',
+        use: './src/voxLoader.js',
       },
     ],
   },

@@ -1,9 +1,23 @@
+import { Subject } from 'rxjs';
 import * as THREE from 'three';
 import { camera } from '../context';
 
 export default class PhysicsComponent {
-  constructor(pivot) {
+  constructor() {
     this.raycaster = new THREE.Raycaster();
+    this.observable = new Subject();
+  }
+
+  setInputObservable(inputObservable) {
+    inputObservable.subscribe(({ type, mouse }) => {
+      this.observable.next({ type, cube: this.getIntersectedObject(mouse), mouse });
+    });
+  }
+
+  setMeshObservable(observable) {
+    observable.subscribe((pivot) => {
+      this.pivot = pivot;
+    });
   }
 
   getIntersectedObject(mouse) {
@@ -13,11 +27,6 @@ export default class PhysicsComponent {
     this.raycaster.setFromCamera(mouse, camera);
 
     const intersects = this.raycaster.intersectObjects(this.pivot.children, true);
-
-    if (intersects.length > 0) {
-      return intersects[0].object.parent;
-    }
-
-    return null;
+    return intersects.length > 0 ? intersects[0].object.parent : null;
   }
 }
