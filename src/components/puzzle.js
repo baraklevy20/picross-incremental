@@ -10,6 +10,10 @@ export default class PuzzleComponent {
     ];
 
     this.puzzlesWithCircles = [
+      '5x5x1/I.vox',
+      '5x5x1/square.vox',
+      '6x5x1/camel.vox',
+      '6x5x1/frame.vox',
       '5x5x1/smile.vox',
     ];
 
@@ -18,6 +22,7 @@ export default class PuzzleComponent {
     ];
 
     this.puzzles = this.puzzlesWithoutCircles;
+    // this.puzzles = ['6x5x1/frame.vox'];
     this.currentPuzzleIndex = 0;
   }
 
