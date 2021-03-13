@@ -77,30 +77,30 @@ export default class MeshComponent {
   }
 
   setPhysicsObservable(physicsObservable) {
-    physicsObservable.subscribe(({ type, cube }) => {
+    physicsObservable.subscribe(({ type, mesh }) => {
       if (type === 'move') {
-        this.onNewSelectedCube(cube);
+        this.onNewSelectedCube(mesh);
       }
     });
   }
 
   setGameObservable(observable) {
-    observable.subscribe(({ type, cube }) => {
+    observable.subscribe(({ type, mesh }) => {
       switch (type) {
         case 'cube_destroyed':
-          this.destroyCube(cube);
+          this.destroyCube(mesh);
           break;
         case 'cube_painted':
-          this.paintCube(cube);
+          this.paintCube(mesh);
           break;
         case 'cube_unpainted':
-          this.unpaintCube(cube);
+          this.unpaintCube(mesh);
           break;
         case 'space_painted':
-          this.paintCube(cube);
+          this.paintCube(mesh);
           break;
         case 'broke_solid_cube':
-          this.breakSolidCube(cube);
+          this.breakSolidCube(mesh);
           break;
         default:
       }

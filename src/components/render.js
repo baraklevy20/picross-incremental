@@ -35,9 +35,9 @@ export default class RenderComponent {
   }
 
   setPhysicsObservable(physicsObservable) {
-    physicsObservable.subscribe(({ type, cube }) => {
+    physicsObservable.subscribe(({ type, mesh }) => {
       if (type === 'move') {
-        this.controls.enabled = !cube;
+        this.controls.enabled = !mesh;
       }
     });
   }

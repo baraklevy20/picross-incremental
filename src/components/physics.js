@@ -10,7 +10,7 @@ export default class PhysicsComponent {
 
   setInputObservable(inputObservable) {
     inputObservable.subscribe(({ type, mouse }) => {
-      this.observable.next({ type, cube: this.getIntersectedObject(mouse), mouse });
+      this.observable.next({ type, mesh: this.getIntersectedObject(mouse), mouse });
     });
   }
 
