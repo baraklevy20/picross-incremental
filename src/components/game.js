@@ -265,14 +265,14 @@ export default class GameComponent {
                 mesh,
               });
 
-              // if (this.puzzleComponent.isSolved()) {
-              this.onPuzzleComplete();
-              this.isPuzzleComplete = true;
-              this.observable.next({ type: 'puzzle_complete_started' });
-              setTimeout(() => {
-                this.observable.next({ type: 'puzzle_complete_ended' });
-              }, GameComponent.getWinningAnimationTime());
-              // }
+              if (this.puzzleComponent.isSolved()) {
+                this.onPuzzleComplete();
+                this.isPuzzleComplete = true;
+                this.observable.next({ type: 'puzzle_complete_started' });
+                setTimeout(() => {
+                  this.observable.next({ type: 'puzzle_complete_ended' });
+                }, GameComponent.getWinningAnimationTime());
+              }
             } else if (mouse.button === 'right') {
               mesh.cube.state = 'paintedEmpty';
               this.observable.next({
