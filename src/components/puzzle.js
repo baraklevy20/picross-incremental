@@ -1,20 +1,31 @@
 import { get, set } from 'lodash';
+import { Subject } from 'rxjs';
+
+// todo puzzle solving algorithm can be much faster.
+// right now: we solve x lines, y lines and z lines. then repeat until solved.
+// new idea: solve x lines, y lines and z lines. then only repeat lines whose one of the
+// cells has changed. e.g. if by solving line x, the cube at [1,2,3] has changed,
+// we don't need to go through clues at [2][y][z] as it wasn't changed.
+// we only care about the line[1][y][3]. this can make solving much quicker
 
 export default class PuzzleComponent {
   constructor() {
+    this.dimension = 9; // todo eventually change to 0
+    this.observable = new Subject();
+
     this.puzzlesWithoutCircles = [
-      '5x5x1/t.vox',
-      '5x5x1/plus.vox',
-      '5x5x1/L.vox',
-      '5x5x1/stairs.vox',
+      '5x5x1/t',
+      '5x5x1/plus',
+      '5x5x1/L',
+      '5x5x1/stairs',
     ];
 
     this.puzzlesWithCircles = [
-      '5x5x1/I.vox',
-      '5x5x1/square.vox',
-      '6x5x1/camel.vox',
-      '6x5x1/frame.vox',
-      '5x5x1/smile.vox',
+      '5x5x1/I',
+      '5x5x1/square',
+      '6x5x1/camel',
+      '6x5x1/frame',
+      '5x5x1/smile',
     ];
 
     this.puzzlesWithSquares = [
@@ -22,7 +33,7 @@ export default class PuzzleComponent {
     ];
 
     this.puzzles = this.puzzlesWithoutCircles;
-    // this.puzzles = ['6x5x1/frame.vox'];
+    this.puzzles = ['6x5x1/frame'];
     this.currentPuzzleIndex = 0;
   }
 
@@ -38,6 +49,10 @@ export default class PuzzleComponent {
             this.currentPuzzleIndex = this.puzzles.length - 1;
             this.puzzles = [...this.puzzles, ...this.puzzlesWithSquares];
             break;
+          case 'cube-resolution':
+            this.dimension = event.upgrade.level;
+            this.generateBigPuzzle();
+            break;
           default:
         }
       }
@@ -45,7 +60,7 @@ export default class PuzzleComponent {
   }
 
   async voxFileToPuzzle(voxFilePath) {
-    const { default: voxFile } = await import(`../../models/${voxFilePath}`);
+    const { default: voxFile } = await import(`../../models/${voxFilePath}.vox`);
     this.cubes = [];
     voxFile.xyzi.values.forEach((xyzi) => {
       set(this.cubes, `[${xyzi.x}][${xyzi.z}][${xyzi.y}]`, 0x30);
@@ -63,6 +78,64 @@ export default class PuzzleComponent {
     }
   }
 
+  async generateBigPuzzle(voxFilePath) {
+    const { default: bigVoxFile } = await import(`../../models/${voxFilePath}-big.vox`);
+    this.bigCubes = [];
+    bigVoxFile.xyzi.values.forEach((xyzi) => {
+      set(this.bigCubes, `[${xyzi.x}][${xyzi.z}][${xyzi.y}]`, 0x30);
+    });
+
+    // Fill the rest of the cells with empty
+    for (let x = 0; x < bigVoxFile.size.x; x += 1) {
+      for (let y = 0; y < bigVoxFile.size.y; y += 1) {
+        for (let z = 0; z < bigVoxFile.size.z; z += 1) {
+          if (!get(this.bigCubes, `[${x}][${z}][${y}]`)) {
+            set(this.bigCubes, `[${x}][${z}][${y}]`, 0x20);
+          }
+        }
+      }
+    }
+
+    // Average the cubes according to the dimension
+    const maxDimension = 3;
+    const xSize = 2 ** Math.max(Math.floor((maxDimension * 2 - this.dimension) / 2), 0);
+    const ySize = 2 ** Math.max(Math.ceil((maxDimension * 2 - this.dimension) / 2), 0);
+    const zSize = 2 ** Math.min(9 - this.dimension, maxDimension);
+    const average = (x, y, z) => {
+      let solidsCount = 0;
+      let spacesCount = 0;
+      for (let i = 0; i < xSize; i += 1) {
+        for (let j = 0; j < ySize; j += 1) {
+          for (let k = 0; k < zSize; k += 1) {
+            if (this.bigCubes[x + i][y + j][z + k] >= 0x30) {
+              solidsCount += 1;
+            } else {
+              spacesCount += 1;
+            }
+          }
+        }
+      }
+
+      return solidsCount >= spacesCount ? 0x30 : 0x20;
+    };
+
+    const averagedCubes = [];
+    for (let x = 0; x < this.bigCubes.length / xSize; x += 1) {
+      for (let y = 0; y < this.bigCubes[0].length / ySize; y += 1) {
+        for (let z = 0; z < this.bigCubes[0][0].length / zSize; z += 1) {
+          set(averagedCubes, `[${x}][${y}][${z}]`, average(x * xSize, y * ySize, z * zSize));
+        }
+      }
+    }
+
+    this.bigCubes = averagedCubes;
+    this.observable.next({
+      type: 'resolution_changed',
+      dimension: this.dimension,
+      cubes: this.bigCubes,
+    });
+  }
+
   async onNextPuzzle() {
     this.currentPuzzleIndex = (this.currentPuzzleIndex + 1) % this.puzzles.length;
     await this.generatePuzzle();
@@ -70,6 +143,7 @@ export default class PuzzleComponent {
 
   async generatePuzzle() {
     await this.voxFileToPuzzle(this.puzzles[this.currentPuzzleIndex]);
+    await this.generateBigPuzzle(this.puzzles[this.currentPuzzleIndex]);
     this.brokenSolids = 0;
     this.clues = this.generateClues();
     this.removeClues();

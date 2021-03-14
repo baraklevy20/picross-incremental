@@ -16,6 +16,11 @@ export default class DomComponent {
         default:
       }
     });
+
+    // Enable tooltips
+    $('body').tooltip({
+      selector: '[data-toggle="tooltip"]',
+    });
   }
 
   addUpgradesUI(upgrades) {
@@ -29,7 +34,7 @@ export default class DomComponent {
           <h6 class="font-weight-light text-center text-nowrap">
             ${upgrade.label}${upgrade.currentValue !== undefined ? `: <span id="${upgrade.name}-current">${upgrade.currentValue}</span> <span id='${upgrade.name}-next' style="display: none;">(${upgrade.nextValue})</span>` : ''}
           </h6>
-          <button id="${upgrade.name}-buy-button" style="width: 100%;"><span id="${upgrade.name}-buy-button-value">${upgrade.cost}</span> gold</button>
+          <button id="${upgrade.name}-buy-button" style="width: 100%;" data-toggle="tooltip" data-html="true" data-placement="right" title="${upgrade.desc}"><span id="${upgrade.name}-buy-button-value">${upgrade.cost}</span> gold</button>
         </span>
     `;
 
@@ -61,9 +66,15 @@ export default class DomComponent {
       return;
     }
 
-    $(`#${upgrade.name}-buy-button-value`).text(upgrade.cost);
     $(`#${upgrade.name}-current`).text(upgrade.currentValue);
-    $(`#${upgrade.name}-next`).text(`(${upgrade.nextValue})`);
+
+    if (upgrade.cost !== null) {
+      $(`#${upgrade.name}-buy-button-value`).text(upgrade.cost);
+      $(`#${upgrade.name}-next`).text(`(${upgrade.nextValue})`);
+    } else {
+      $(`#${upgrade.name}-buy-button`).text('Maxed');
+      $(`#${upgrade.name}-next`).text('');
+    }
   }
 
   static onGoldChanged(gold) {

@@ -11,6 +11,7 @@ export default class GameComponent {
       'puzzle-width': {
         name: 'puzzle-width',
         label: 'Puzzle width',
+        desc: 'Increase puzzle width by 1.<br>It takes effect starting at the next puzzle',
         baseCost: 15000,
         baseValue: 5,
         level: 0,
@@ -20,6 +21,7 @@ export default class GameComponent {
       'puzzle-height': {
         name: 'puzzle-height',
         label: 'Puzzle height',
+        desc: 'Increase puzzle height by 1.<br>It takes effect starting at the next puzzle',
         baseCost: 37500,
         baseValue: 5,
         level: 0,
@@ -29,15 +31,28 @@ export default class GameComponent {
       'gold-per-cube': {
         name: 'gold-per-cube',
         label: 'Gold per cube',
+        desc: 'Increase the gold you gain per black and white cube',
         baseCost: 5,
         baseValue: 1,
         level: 0,
         costExp: 1.15,
         valueMultiplier: 1.05,
       },
+      'cube-resolution': {
+        name: 'cube-resolution',
+        label: 'Cube dimension',
+        desc: 'Each cube contains a row (or sets of rows) of cubes, done recursively',
+        baseCost: 0,
+        baseValue: 0,
+        level: 0,
+        maxLevel: 2,
+        costExp: 1,
+        valueAddition: 1,
+      },
       'unlock-circles': {
         name: 'unlock-circles',
         label: 'Unlock circle clues and x2 gold per cube',
+        desc: 'Circle clues indicate the quantity of cubes in the current line is divided into two separated groups. e.g. 4 with a circle can be divided into 1,3; 2,2 or 3,1',
         baseCost: 1500,
         level: 0,
         isFeature: true,
@@ -45,6 +60,7 @@ export default class GameComponent {
       'unlock-squares': {
         name: 'unlock-squares',
         label: 'Unlock square clues and x2 gold per cube',
+        desc: 'Square clues indicate the quantity of cubes in the current line is divided into three or more separated groups. e.g. 4 with a circle can be divided into 1,3; 2,2; 1,1,2 or 1,1,1,1 (or any combination of those)',
         baseCost: 1,
         level: 0,
         isFeature: true,
@@ -95,16 +111,23 @@ export default class GameComponent {
 
   buyUpgrade(upgradeName) {
     const upgrade = this.upgrades[upgradeName];
-    if (upgrade.cost <= this.gold) {
-      this.setGold(this.gold - upgrade.cost);
-      upgrade.level += 1;
-      upgrade.currentValue = upgrade.nextValue;
-      GameComponent.calculateUpgradeValues(upgrade);
-      this.observable.next({
-        type: 'upgrade_levelup',
-        upgrade,
-      });
+
+    if (upgrade.cost > this.gold) {
+      return;
     }
+
+    if (upgrade.maxLevel !== undefined && upgrade.level >= upgrade.maxLevel) {
+      return;
+    }
+
+    this.setGold(this.gold - upgrade.cost);
+    upgrade.level += 1;
+    upgrade.currentValue = upgrade.nextValue;
+    GameComponent.calculateUpgradeValues(upgrade);
+    this.observable.next({
+      type: 'upgrade_levelup',
+      upgrade,
+    });
   }
 
   getWidth() {
@@ -131,7 +154,9 @@ export default class GameComponent {
       return;
     }
 
-    if (upgrade.maxLevel !== undefined && upgrade.level >= upgrade.maxLevel) {
+    if (upgrade.level >= upgrade.maxLevel) {
+      upgrade.cost = null;
+      upgrade.nextValue = null;
       return;
     }
 
@@ -240,13 +265,14 @@ export default class GameComponent {
                 mesh,
               });
 
-              if (this.puzzleComponent.isSolved()) {
-                this.onPuzzleComplete();
-                this.isPuzzleComplete = true;
-                setTimeout(() => {
-                  this.observable.next({ type: 'puzzle_complete' });
-                }, GameComponent.getWinningAnimationTime());
-              }
+              // if (this.puzzleComponent.isSolved()) {
+              this.onPuzzleComplete();
+              this.isPuzzleComplete = true;
+              this.observable.next({ type: 'puzzle_complete_started' });
+              setTimeout(() => {
+                this.observable.next({ type: 'puzzle_complete_ended' });
+              }, GameComponent.getWinningAnimationTime());
+              // }
             } else if (mouse.button === 'right') {
               mesh.cube.state = 'paintedEmpty';
               this.observable.next({

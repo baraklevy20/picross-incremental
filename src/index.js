@@ -8,6 +8,9 @@ import PuzzleComponent from './components/puzzle';
 import GameComponent from './components/game';
 import DomComponent from './components/dom';
 import RenderComponent from './components/render';
+import 'bootstrap';
+import 'bootstrap/js/dist/tooltip';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const cubeSize = 1;
 
@@ -77,7 +80,7 @@ const animate = () => {
   stats.begin();
 
   if (gameComponent.isPuzzleComplete) {
-    meshComponent.pivot.rotation.y += 0.03;
+    meshComponent.bigPivot.rotation.y += 0.03;
   } else {
     DomComponent.updateGameTime(gameComponent.gameStartTime);
   }
@@ -90,7 +93,7 @@ const animate = () => {
 };
 
 const moveToNextPuzzle = async () => {
-  meshComponent.destroyPreviousPuzzleMesh();
+  MeshComponent.destroyPuzzleMesh(meshComponent.bigPivot);
   await puzzleComponent.onNextPuzzle(gameComponent);
   gameComponent.nextPuzzle();
   meshComponent.generatePuzzleMesh();
@@ -112,6 +115,7 @@ const initComponents = async () => {
 
   meshComponent.setPhysicsObservable(physicsComponent.observable);
   meshComponent.setGameObservable(gameComponent.observable);
+  meshComponent.setPuzzleObservable(puzzleComponent.observable);
 
   physicsComponent.setInputObservable(inputComponent.observable);
   physicsComponent.setMeshObservable(meshComponent.observable);
@@ -119,15 +123,23 @@ const initComponents = async () => {
   renderComponent.setPhysicsObservable(physicsComponent.observable);
 
   gameComponent.observable.subscribe(({ type }) => {
-    if (type === 'puzzle_complete') {
-      moveToNextPuzzle();
+    switch (type) {
+      case 'puzzle_complete_started':
+        MeshComponent.destroyPuzzleMesh(meshComponent.pivot);
+        scene.add(meshComponent.bigPivot);
+        break;
+      case 'puzzle_complete_ended':
+        moveToNextPuzzle();
+        break;
+      default:
+        break;
     }
   });
 };
 
 const init = async () => {
   await initComponents();
-  loadGame();
+  // loadGame();
 
   // If this is the first game, generate the puzzle
   if (!puzzleComponent.cubes) {

@@ -1,6 +1,7 @@
 import { get, set } from 'lodash';
 import { Subject } from 'rxjs';
 import * as THREE from 'three';
+import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import '../../styles.css';
 import { scene } from '../context';
 
@@ -84,6 +85,18 @@ export default class MeshComponent {
     });
   }
 
+  setPuzzleObservable(observable) {
+    observable.subscribe(({ type, dimension, cubes }) => {
+      switch (type) {
+        case 'resolution_changed':
+          MeshComponent.destroyPuzzleMesh(this.bigPivot);
+          this.generateBigPuzzleMesh(dimension, cubes);
+          break;
+        default:
+      }
+    });
+  }
+
   setGameObservable(observable) {
     observable.subscribe(({ type, mesh }) => {
       switch (type) {
@@ -130,15 +143,15 @@ export default class MeshComponent {
     }
   }
 
-  createCube(geometry, position, state, clue) {
+  createCube(cubeSize, geometry, position, state, clue) {
     const group = new THREE.Group();
     const material = this.createTextMaterial(clue, state);
 
     const cube = new THREE.Mesh(geometry, material);
     cube.position.set(
-      position[0] * this.cubeSize,
-      position[1] * this.cubeSize,
-      position[2] * this.cubeSize,
+      position[0] * cubeSize,
+      position[1] * cubeSize,
+      position[2] * cubeSize,
     );
 
     group.add(cube);
@@ -327,7 +340,11 @@ export default class MeshComponent {
               directions.push(i);
             }
           });
-          const geometry = this.getCubeGeometry(directions);
+          const geometry = this.getCubeGeometry({
+            x: this.cubeSize,
+            y: this.cubeSize,
+            z: this.cubeSize,
+          }, directions);
           this.meshes[x][y][z].children[0].geometry = geometry;
         }
       }
@@ -366,11 +383,16 @@ export default class MeshComponent {
     this.generatePuzzleMesh();
   }
 
-  destroyPreviousPuzzleMesh() {
-    this.pivot.children[0].children.forEach((cube) => {
-      this.destroyCube(cube);
+  static destroyPuzzleMesh(pivot) {
+    if (!pivot) {
+      return;
+    }
+
+    pivot.children[0].children.forEach((cube) => {
+      pivot.children[0].remove(cube);
+      cube.children.forEach((c) => c.geometry.dispose());
     });
-    scene.remove(this.pivot);
+    scene.remove(pivot);
   }
 
   generatePuzzleMesh() {
@@ -395,8 +417,13 @@ export default class MeshComponent {
                 directions.push(i);
               }
             });
-            const geometry = this.getCubeGeometry(directions);
-            const mesh = this.createCube(geometry, [x, y, z], cube.state, {
+            const geometry = this.getCubeGeometry({
+              x: this.cubeSize,
+              y: this.cubeSize,
+              z: this.cubeSize,
+            },
+            directions);
+            const mesh = this.createCube(this.cubeSize, geometry, [x, y, z], cube.state, {
               x: this.puzzleComponent.clues.x?.[y]?.[z],
               y: this.puzzleComponent.clues.y?.[x]?.[z],
               z: this.puzzleComponent.clues.z?.[x]?.[y],
@@ -417,7 +444,63 @@ export default class MeshComponent {
     // todo check if empty cube uses just 1 render draw (and not 6)
   }
 
-  getCubeGeometry(sides) {
+  generateBigPuzzleMesh(dimension, bigCubes) {
+    const maxDimension = 3;
+    const xSize = 2 ** Math.min(Math.ceil(dimension / 2), maxDimension);
+    const ySize = 2 ** Math.min(Math.ceil((dimension - 1) / 2), maxDimension);
+    const zSize = 2 ** Math.max(0, dimension - maxDimension * 2);
+    const pivot = new THREE.Group();
+    const centerPoint = MeshComponent.getPuzzleCenter(bigCubes);
+    const cubesMesh = new THREE.Object3D();
+    cubesMesh.position.set(
+      -centerPoint[0] * this.cubeSize / xSize,
+      -centerPoint[1] * this.cubeSize / ySize,
+      -centerPoint[2] * this.cubeSize / zSize,
+    );
+    pivot.add(cubesMesh);
+
+    const blackCubes = [];
+
+    bigCubes.forEach((face, x) => {
+      face.forEach((line, y) => {
+        line.forEach((cube, z) => {
+          if (cube >= 0x30) {
+            const directions = [];
+            this.faces.forEach(({ dir }, i) => {
+              const neighbor = get(bigCubes, `[${x + dir[0]}][${y + dir[1]}][${z + dir[2]}]`);
+              if (!neighbor || neighbor.state !== 'part') {
+                directions.push(i);
+              }
+            });
+
+            const geometry = this.getCubeGeometry({
+              x: this.cubeSize / xSize,
+              y: this.cubeSize / ySize,
+              z: this.cubeSize / zSize,
+            }, directions);
+            geometry.translate(
+              x * this.cubeSize / xSize,
+              y * this.cubeSize / ySize,
+              z * this.cubeSize / zSize,
+            );
+            blackCubes.push(geometry);
+          }
+        });
+      });
+    });
+
+    const singleBlackGeometry = BufferGeometryUtils.mergeBufferGeometries(blackCubes, true);
+    const blackMaterial = new THREE.MeshBasicMaterial({ color: this.stateColors.painted });
+    cubesMesh.add(new THREE.Mesh(
+      singleBlackGeometry,
+      blackMaterial,
+    ));
+    this.bigPivot = pivot;
+    pivot.rotation.x += 0.1;
+    pivot.rotation.y += 0.5;
+  }
+
+  getCubeGeometry(cubeSize, sides) {
     const positions = [];
     const indices = [];
     const uvs = [];
@@ -427,7 +510,7 @@ export default class MeshComponent {
     sides.forEach((sideIndex, i) => {
       const side = this.faces[sideIndex];
       side.corners.forEach(({ pos, uv }) => {
-        positions.push(...pos);
+        positions.push(pos[0] * cubeSize.x, pos[1] * cubeSize.y, pos[2] * cubeSize.z);
         normals.push(...side.dir);
         uvs.push(...uv);
       });
