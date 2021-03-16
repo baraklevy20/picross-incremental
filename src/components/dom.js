@@ -32,7 +32,7 @@ export default class DomComponent {
       const element = `
         <span id="upgrade-${upgrade.name}">
           <h6 class="font-weight-light text-center text-nowrap">
-            ${upgrade.label}${upgrade.currentValue !== undefined ? `: <span id="${upgrade.name}-current" style="padding-right: 0.25rem;">${upgrade.currentValue}</span><span id='${upgrade.name}-next' style="display: none;">${upgrade.cost ? `(${upgrade.nextValue})` : ''}</span>` : ''}
+            ${upgrade.label}${upgrade.currentValue !== undefined ? `: <span id="${upgrade.name}-current" style="padding-right: 0.25rem;">${upgrade.currentValue}</span><span id='${upgrade.name}-next' style="display: none;">${upgrade.cost !== null ? `(${upgrade.nextValue})` : ''}</span>` : ''}
           </h6>
           <button id="${upgrade.name}-buy-button" style="width: 100%;" data-toggle="tooltip" data-html="true" data-placement="right" title="${upgrade.desc}">${upgrade.cost === null ? 'Maxed' : `<span id="${upgrade.name}-buy-button-value">${upgrade.cost}</span> gold`}</button>
         </span>
