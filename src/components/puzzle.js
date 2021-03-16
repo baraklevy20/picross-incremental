@@ -10,7 +10,7 @@ import { Subject } from 'rxjs';
 
 export default class PuzzleComponent {
   constructor() {
-    this.dimension = 9; // todo eventually change to 0
+    this.dimension = 0;
     this.observable = new Subject();
 
     this.puzzlesWithoutCircles = [
@@ -37,8 +37,26 @@ export default class PuzzleComponent {
     this.currentPuzzleIndex = 0;
   }
 
+  async afterLoad() {
+    // If this is the first game, generate the puzzle
+    if (!this.cubes) {
+      await this.generatePuzzle(5, 5, 1);
+    }
+
+    this.updateBigCubeSize();
+  }
+
+  updateBigCubeSize() {
+    const maxDimension = 3;
+    this.bigSize = {
+      xSize: 2 ** Math.min(Math.ceil(this.dimension / 2), maxDimension),
+      ySize: 2 ** Math.min(Math.ceil((this.dimension - 1) / 2), maxDimension),
+      zSize: 2 ** Math.max(0, this.dimension - maxDimension * 2),
+    };
+  }
+
   setGameObservable(gameObservable) {
-    gameObservable.subscribe((event) => {
+    gameObservable.subscribe(async (event) => {
       if (event.type === 'upgrade_levelup') {
         switch (event.upgrade.name) {
           case 'unlock-circles':
@@ -51,11 +69,14 @@ export default class PuzzleComponent {
             break;
           case 'cube-resolution':
             this.dimension = event.upgrade.level;
-            this.bigCubes = PuzzleComponent.generateCubes(this.dimension);
+            this.updateBigCubeSize();
+            this.bigCubes = await PuzzleComponent.generateCubes(
+              this.dimension,
+              this.puzzles[this.currentPuzzleIndex],
+            );
+            this.updateBigCubesStates();
             this.observable.next({
               type: 'resolution_changed',
-              dimension: this.dimension,
-              cubes: this.bigCubes,
             });
             break;
           default:
@@ -82,11 +103,12 @@ export default class PuzzleComponent {
       }
     }
 
-    // Average the cubes according to the dimension
     const maxDimension = 3;
     const xSize = 2 ** Math.max(Math.floor((maxDimension * 2 - dimension) / 2), 0);
     const ySize = 2 ** Math.max(Math.ceil((maxDimension * 2 - dimension) / 2), 0);
     const zSize = 2 ** Math.min(9 - dimension, maxDimension);
+
+    // Average the cubes according to the dimension
     const average = (x, y, z) => {
       let solidsCount = 0;
       let spacesCount = 0;
@@ -133,11 +155,6 @@ export default class PuzzleComponent {
       this.puzzles[this.currentPuzzleIndex],
     );
 
-    this.observable.next({
-      type: 'resolution_changed',
-      dimension: this.dimension,
-      cubes: this.bigCubes,
-    });
     this.brokenSolids = 0;
     this.clues = this.generateClues();
     this.removeClues();
@@ -150,6 +167,7 @@ export default class PuzzleComponent {
           z,
         },
         state,
+        value: cube,
       };
     })));
     const solidsAndSpaces = this.calculateNumberOfSolidsAndSpaces();
@@ -729,7 +747,33 @@ export default class PuzzleComponent {
       || line[position - 1] >= 0x40);
   }
 
-  onBrokenSolid() {
+  onBrokenSolid(cube) {
     this.brokenSolids += 1;
+    this.updateBigCubeStateByCube(cube);
+  }
+
+  updateBigCubeStateByCube(cube) {
+    for (let dx = 0; dx < this.bigSize.xSize; dx += 1) {
+      for (let dy = 0; dy < this.bigSize.ySize; dy += 1) {
+        for (let dz = 0; dz < this.bigSize.zSize; dz += 1) {
+          const x = cube.position.x * this.bigSize.xSize + dx;
+          const y = cube.position.y * this.bigSize.ySize + dy;
+          const z = cube.position.z * this.bigSize.zSize + dz;
+          if (cube.state === 'brokenSolid') {
+            set(this.bigCubes, `[${x}][${y}][${z}]`, 0x40);
+          }
+        }
+      }
+    }
+  }
+
+  updateBigCubesStates() {
+    this.cubes.forEach((face) => {
+      face.forEach((line) => {
+        line.forEach((cube) => {
+          this.updateBigCubeStateByCube(cube);
+        });
+      });
+    });
   }
 }

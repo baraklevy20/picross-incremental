@@ -126,6 +126,7 @@ const initComponents = async () => {
     switch (type) {
       case 'puzzle_complete_started':
         MeshComponent.destroyPuzzleMesh(meshComponent.pivot);
+        meshComponent.generateBigPuzzleMeshFromBlacksAndWhites();
         scene.add(meshComponent.bigPivot);
         break;
       case 'puzzle_complete_ended':
@@ -139,13 +140,9 @@ const initComponents = async () => {
 
 const init = async () => {
   await initComponents();
-  // loadGame();
+  loadGame();
 
-  // If this is the first game, generate the puzzle
-  if (!puzzleComponent.cubes) {
-    await puzzleComponent.generatePuzzle(5, 5, 1);
-  }
-
+  await puzzleComponent.afterLoad();
   gameComponent.calculateUpgradesValues();
   domComponent.addUpgradesUI(gameComponent.upgrades);
   meshComponent.createPuzzleMesh(puzzleComponent);

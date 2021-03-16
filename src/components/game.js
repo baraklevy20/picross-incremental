@@ -45,7 +45,7 @@ export default class GameComponent {
         baseCost: 0,
         baseValue: 0,
         level: 0,
-        maxLevel: 2,
+        maxLevel: 9,
         costExp: 1,
         valueAddition: 1,
       },
@@ -289,7 +289,7 @@ export default class GameComponent {
                 type: 'broke_solid_cube',
                 mesh,
               });
-              this.puzzleComponent.onBrokenSolid();
+              this.puzzleComponent.onBrokenSolid(mesh.cube);
             } else if (mouse.button === 'right') {
               mesh.cube.state = 'painted';
               this.observable.next({
