@@ -34,7 +34,7 @@ export default class InputController {
           type: 'click',
           mouse: {
             ...this.mouse,
-            button: e.button === 0 ? 'left' : 'right',
+            button: e.button === 0 ? 'paint' : 'break',
           },
         });
       });

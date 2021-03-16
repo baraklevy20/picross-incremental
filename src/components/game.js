@@ -257,7 +257,7 @@ export default class GameComponent {
 
         switch (mesh.cube.state) {
           case 'empty':
-            if (mouse.button === 'left') {
+            if (mouse.button === 'break') {
               this.puzzleComponent.destroyCube(mesh.cube);
               this.onDestroyedCube();
               this.observable.next({
@@ -273,7 +273,7 @@ export default class GameComponent {
                   this.observable.next({ type: 'puzzle_complete_ended' });
                 }, GameComponent.getWinningAnimationTime());
               }
-            } else if (mouse.button === 'right') {
+            } else if (mouse.button === 'paint') {
               mesh.cube.state = 'paintedEmpty';
               this.observable.next({
                 type: 'space_painted',
@@ -282,7 +282,7 @@ export default class GameComponent {
             }
             break;
           case 'part':
-            if (mouse.button === 'left') {
+            if (mouse.button === 'break') {
               // todo add more logic here. split to a function 'onWrongBreak'
               mesh.cube.state = 'brokenSolid';
               this.observable.next({
@@ -290,7 +290,7 @@ export default class GameComponent {
                 mesh,
               });
               this.puzzleComponent.onBrokenSolid(mesh.cube);
-            } else if (mouse.button === 'right') {
+            } else if (mouse.button === 'paint') {
               mesh.cube.state = 'painted';
               this.observable.next({
                 type: 'cube_painted',
@@ -299,7 +299,7 @@ export default class GameComponent {
             }
             break;
           case 'painted':
-            if (mouse.button === 'right') {
+            if (mouse.button === 'paint') {
               mesh.cube.state = 'part';
               this.observable.next({
                 type: 'cube_unpainted',
@@ -308,7 +308,7 @@ export default class GameComponent {
             }
             break;
           case 'paintedEmpty':
-            if (mouse.button === 'right') {
+            if (mouse.button === 'paint') {
               mesh.cube.state = 'empty';
               this.observable.next({
                 type: 'cube_unpainted',
