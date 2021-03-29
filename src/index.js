@@ -140,7 +140,7 @@ const initComponents = async () => {
 
 const init = async () => {
   await initComponents();
-  loadGame();
+  // loadGame();
 
   await puzzleComponent.afterLoad();
   gameComponent.calculateUpgradesValues();

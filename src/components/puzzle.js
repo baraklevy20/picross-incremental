@@ -33,7 +33,9 @@ export default class PuzzleComponent {
     ];
 
     this.puzzles = this.puzzlesWithoutCircles;
-    this.puzzles = ['5x5x1/smile'];
+    // this.puzzles = ['5x5x1/smile'];
+    // this.puzzles = ['#cat_01'];
+    this.puzzles = ['cart'];
     this.currentPuzzleIndex = 0;
   }
 
@@ -86,7 +88,7 @@ export default class PuzzleComponent {
   }
 
   static async generateCubes(dimension, voxFilePath) {
-    const { default: bigVoxFile } = await import(`../../models/${voxFilePath}-big.vox`);
+    const { default: bigVoxFile } = await import(`../../models/${voxFilePath}.vox`);
     const cubes = [];
     bigVoxFile.xyzi.values.forEach((xyzi) => {
       set(cubes, `[${xyzi.x}][${xyzi.z}][${xyzi.y}]`, 0x30);
@@ -112,9 +114,9 @@ export default class PuzzleComponent {
     const average = (x, y, z) => {
       let solidsCount = 0;
       let spacesCount = 0;
-      for (let i = 0; i < xSize; i += 1) {
-        for (let j = 0; j < ySize; j += 1) {
-          for (let k = 0; k < zSize; k += 1) {
+      for (let i = 0; i < xSize && x + i < cubes.length; i += 1) {
+        for (let j = 0; j < ySize && y + j < cubes[0].length; j += 1) {
+          for (let k = 0; k < zSize && z + k < cubes[0][0].length; k += 1) {
             if (cubes[x + i][y + j][z + k] >= 0x30) {
               solidsCount += 1;
             } else {
